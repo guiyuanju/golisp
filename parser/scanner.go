@@ -21,6 +21,8 @@ const (
 	QUOTE
 )
 
+var DELIMETER []byte = []byte{'(', ')', '{', '}', '[', ']', ' ', '\n', '"'}
+
 type Token struct {
 	TokenType TokenType
 	Line      int
@@ -72,14 +74,21 @@ func (s *Scanner) advance() {
 
 func (s *Scanner) consume(value string) bool {
 	start := s.i
+	reset := func() {
+		s.i = start
+		s.length = 0
+	}
 	for _, b := range []byte(value) {
 		if s.isEnd() || b != s.cur() {
-			s.i = start
-			s.length = 0
+			reset()
 			return false
 		}
 		s.advance()
 		s.length++
+	}
+	if !s.isEnd() && !slices.Contains(DELIMETER, s.cur()) {
+		reset()
+		return false
 	}
 	return true
 }
@@ -138,9 +147,8 @@ func (s *Scanner) Scan() ([]Token, bool) {
 
 // alphabet, -, number
 func (s *Scanner) symbol() string {
-	nonSym := []byte{'(', ')', '{', '}', '[', ']', ' ', '\n', '"'}
 	var res []byte
-	for !s.isEnd() && !slices.Contains(nonSym, s.cur()) {
+	for !s.isEnd() && !slices.Contains(DELIMETER, s.cur()) {
 		res = append(res, s.cur())
 		s.advance()
 		s.length++
