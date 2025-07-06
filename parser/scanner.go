@@ -12,21 +12,13 @@ const (
 	RIGHT_PAREN
 	LEFT_BRACKET
 	RIGHT_BRACKET
-	LEFT_BRACE
-	RIGHT_BRACE
-	COMMA
-	QUOTE
 	INTEGER
 	STRING
 	TRUE
 	FALSE
-	IF
-	VAR
-	SET
-	FN
-	SYMBOL
 	NIL
-	MACRO
+	SYMBOL
+	QUOTE
 )
 
 type Token struct {
@@ -118,15 +110,6 @@ func (s *Scanner) Scan() ([]Token, bool) {
 		case ']':
 			res = append(res, s.newToken(RIGHT_BRACKET, nil))
 			s.advance()
-		case '{':
-			res = append(res, s.newToken(LEFT_BRACE, nil))
-			s.advance()
-		case '}':
-			res = append(res, s.newToken(RIGHT_BRACE, nil))
-			s.advance()
-		case ',':
-			res = append(res, s.newToken(COMMA, nil))
-			s.advance()
 		case '\'':
 			res = append(res, s.newToken(QUOTE, nil))
 			s.advance()
@@ -143,18 +126,8 @@ func (s *Scanner) Scan() ([]Token, bool) {
 				res = append(res, s.newToken(TRUE, nil))
 			} else if s.consume("false") {
 				res = append(res, s.newToken(FALSE, nil))
-			} else if s.consume("if") {
-				res = append(res, s.newToken(IF, nil))
-			} else if s.consume("var") {
-				res = append(res, s.newToken(VAR, nil))
-			} else if s.consume("set") {
-				res = append(res, s.newToken(SET, nil))
 			} else if s.consume("nil") {
 				res = append(res, s.newToken(NIL, nil))
-			} else if s.consume("fn") {
-				res = append(res, s.newToken(FN, nil))
-			} else if s.consume("macro") {
-				res = append(res, s.newToken(MACRO, nil))
 			} else {
 				res = append(res, s.newToken(SYMBOL, s.symbol()))
 			}

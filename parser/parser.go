@@ -66,8 +66,26 @@ func (p *Parser) expr() (expr.Expr, bool) {
 			return nil, false
 		}
 		return p.withPosOfToken(expr.NewQuote(v), cur), true
+	case LEFT_BRACKET:
+		res, ok := p.vector()
+		if !ok {
+			return nil, false
+		}
+		_, ok = p.consume(RIGHT_BRACKET)
+		if !ok {
+			return nil, false
+		}
+		return res, true
 	case LEFT_PAREN:
-		return p.list()
+		res, ok := p.list()
+		if !ok {
+			return nil, false
+		}
+		_, ok = p.consume(RIGHT_PAREN)
+		if !ok {
+			return nil, false
+		}
+		return res, true
 	}
 	fmt.Println(errorInfo(cur, "unexpected token"))
 	return nil, false
@@ -76,168 +94,29 @@ func (p *Parser) expr() (expr.Expr, bool) {
 func (p *Parser) list() (expr.Expr, bool) {
 	p.advance()
 	cur := p.cur()
-	switch cur.TokenType {
-	case VAR:
-		p.advance()
-		t, ok := p.consume(SYMBOL)
+	var res []expr.Expr
+	for !p.isEnd() && p.cur().TokenType != RIGHT_PAREN {
+		expr, ok := p.expr()
 		if !ok {
 			return nil, false
 		}
-		name := t.Value.(string)
-
-		value, ok := p.expr()
-		if !ok {
-			return nil, false
-		}
-		_, ok = p.consume(RIGHT_PAREN)
-		if !ok {
-			return nil, false
-		}
-		return p.withPosOfToken(expr.NewDef(name, value), cur), true
-
-	case SET:
-		p.advance()
-		t, ok := p.consume(SYMBOL)
-		if !ok {
-			return nil, false
-		}
-		name := t.Value.(string)
-
-		value, ok := p.expr()
-		if !ok {
-			return nil, false
-		}
-		_, ok = p.consume(RIGHT_PAREN)
-		if !ok {
-			return nil, false
-		}
-		return p.withPosOfToken(expr.NewSet(name, value), cur), true
-
-	case IF:
-		p.advance()
-		pred, ok := p.expr()
-		if !ok {
-			return nil, false
-		}
-		thenBranch, ok := p.expr()
-		if !ok {
-			return nil, false
-		}
-		elseBranch, ok := p.expr()
-		if !ok {
-			return nil, false
-		}
-		_, ok = p.consume(RIGHT_PAREN)
-		if !ok {
-			return nil, false
-		}
-		return p.withPosOfToken(expr.NewIf(pred, thenBranch, elseBranch), cur), true
-
-	case FN:
-		p.advance()
-		if p.isEnd() {
-			fmt.Println(errorInfo(cur, "expect a symbol or param list after it"))
-			return nil, false
-		}
-		name := ""
-		if p.cur().TokenType != LEFT_BRACKET {
-			if p.cur().TokenType != SYMBOL {
-				fmt.Println(errorInfo(cur, "expect a symbol"))
-				return nil, false
-			}
-			name = p.cur().Value.(string)
-			p.advance()
-		}
-
-		_, ok := p.consume(LEFT_BRACKET)
-		if !ok {
-			return nil, false
-		}
-
-		params := []string{}
-		for p.cur().TokenType != RIGHT_BRACKET {
-			t, ok := p.consume(SYMBOL)
-			if !ok {
-				return nil, false
-			}
-			params = append(params, t.Value.(string))
-		}
-
-		_, ok = p.consume(RIGHT_BRACKET)
-		if !ok {
-			return nil, false
-		}
-
-		body := []expr.Expr{}
-		for !p.isEnd() && p.cur().TokenType != RIGHT_PAREN {
-			b, ok := p.expr()
-			if !ok {
-				return nil, false
-			}
-			body = append(body, b)
-		}
-
-		_, ok = p.consume(RIGHT_PAREN)
-		if !ok {
-			return nil, false
-		}
-
-		if name != "" {
-			return expr.NewDef(name, expr.NewClosure(nil, params, body)), true
-		}
-		return p.withPosOfToken(expr.NewClosure(nil, params, body), cur), true
-
-	case MACRO:
-		p.advance()
-		name, ok := p.consume(SYMBOL)
-		if !ok {
-			return nil, false
-		}
-		_, ok = p.consume(LEFT_BRACKET)
-		if !ok {
-			return nil, false
-		}
-		var params []string
-		for !p.isEnd() && p.cur().TokenType != RIGHT_BRACKET {
-			p, ok := p.consume(SYMBOL)
-			if !ok {
-				return nil, false
-			}
-			params = append(params, p.Value.(string))
-		}
-		_, ok = p.consume(RIGHT_BRACKET)
-		if !ok {
-			return nil, false
-		}
-		var body []expr.Expr
-		for !p.isEnd() && p.cur().TokenType != RIGHT_PAREN {
-			b, ok := p.expr()
-			if !ok {
-				return nil, false
-			}
-			body = append(body, b)
-		}
-		_, ok = p.consume(RIGHT_PAREN)
-		if !ok {
-			return nil, ok
-		}
-		return p.withPosOfToken(expr.NewMacro(name.Value.(string), params, body), cur), true
-
-	default:
-		var res []expr.Expr
-		for !p.isEnd() && p.cur().TokenType != RIGHT_PAREN {
-			expr, ok := p.expr()
-			if !ok {
-				return nil, false
-			}
-			res = append(res, expr)
-		}
-		_, ok := p.consume(RIGHT_PAREN)
-		if !ok {
-			return nil, false
-		}
-		return p.withPosOfToken(expr.NewList(res...), cur), true
+		res = append(res, expr)
 	}
+	return p.withPosOfToken(expr.NewList(res...), cur), true
+}
+
+func (p *Parser) vector() (expr.Expr, bool) {
+	p.advance()
+	cur := p.cur()
+	var res []expr.Expr
+	for !p.isEnd() && p.cur().TokenType != RIGHT_BRACKET {
+		expr, ok := p.expr()
+		if !ok {
+			return nil, false
+		}
+		res = append(res, expr)
+	}
+	return p.withPosOfToken(expr.NewVector(res...), cur), true
 }
 
 func (p *Parser) consume(tokenType TokenType) (Token, bool) {

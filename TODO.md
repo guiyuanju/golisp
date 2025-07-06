@@ -74,6 +74,8 @@ fn = "(" "fn" symbol? "[" symbol* "]" expr* ")"
 quote = "'" expr
 macro = "(" "macro" symbol "[" symbol* "]" expr* ")"
 list = "(" expr* ")"
+
+special_form = quote | var | set | if | fn | macro
 ```
 
 macro:

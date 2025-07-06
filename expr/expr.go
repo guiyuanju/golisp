@@ -124,6 +124,25 @@ func (e Macro) String() string {
 	return fmt.Sprintf("<macro %s>", e.Name)
 }
 
+type Vector struct {
+	Id    int
+	Value []Expr
+}
+
+func (e Vector) ExprId() int {
+	return e.Id
+}
+func (e Vector) ExprName() string {
+	return "vector"
+}
+func (e Vector) String() string {
+	var res []string
+	for _, v := range e.Value {
+		res = append(res, fmt.Sprint(v))
+	}
+	return "[" + strings.Join(res, " ") + "]"
+}
+
 type List struct {
 	Id    int
 	Value []Expr
@@ -242,6 +261,10 @@ func NewSymbol(value string) Symbol {
 	return Symbol{getId(), value}
 }
 
+func NewNil() Nil {
+	return Nil{getId()}
+}
+
 func NewQuote(value Expr) Quote {
 	return Quote{getId(), value}
 }
@@ -252,6 +275,10 @@ func NewMacro(name string, params []string, body []Expr) Macro {
 
 func NewList(values ...Expr) List {
 	return List{getId(), values}
+}
+
+func NewVector(values ...Expr) Vector {
+	return Vector{getId(), values}
 }
 
 func NewDef(name string, value Expr) Def {

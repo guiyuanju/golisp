@@ -42,7 +42,7 @@ func TestScanComplex(t *testing.T) {
 		{"string", "\"a string\"", []TokenType{STRING}},
 		{"true", "true", []TokenType{TRUE}},
 		{"complex", "(if true (set a (+ a 1)) b)",
-			[]TokenType{LEFT_PAREN, IF, TRUE, LEFT_PAREN, SET, SYMBOL, LEFT_PAREN,
+			[]TokenType{LEFT_PAREN, SYMBOL, TRUE, LEFT_PAREN, SYMBOL, SYMBOL, LEFT_PAREN,
 				SYMBOL, SYMBOL, INTEGER, RIGHT_PAREN, RIGHT_PAREN, SYMBOL, RIGHT_PAREN}},
 	}
 	for _, tc := range cases {
