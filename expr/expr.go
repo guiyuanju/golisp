@@ -5,120 +5,197 @@ import (
 	"strings"
 )
 
+var id int
+
+func getId() int {
+	res := id
+	id++
+	return res
+}
+
 type Expr interface {
-	Line() int
-	Column() int
+	ExprId() int
 }
 
 type Int struct {
-	Pos
+	Id    int
 	Value int
 }
 
+func (e Int) ExprId() int {
+	return e.Id
+}
+func (e Int) String() string {
+	return fmt.Sprint(e.Value)
+}
+
 type String struct {
-	Pos
+	Id    int
 	Value string
+}
+
+func (e String) ExprId() int {
+	return e.Id
+}
+func (e String) String() string {
+	return fmt.Sprint(e.Value)
+}
+
+type Bool struct {
+	Id    int
+	Value bool
+}
+
+func (e Bool) ExprId() int {
+	return e.Id
+}
+func (e Bool) String() string {
+	return fmt.Sprint(e.Value)
 }
 
 type Symbol struct {
-	Pos
+	Id    int
 	Value string
 }
 
+func (e Symbol) ExprId() int {
+	return e.Id
+}
+func (e Symbol) String() string {
+	return fmt.Sprint(e.Value)
+}
+
 type List struct {
-	Pos
+	Id    int
 	Value []Expr
 }
 
+func (e List) ExprId() int {
+	return e.Id
+}
+func (e List) String() string {
+	var res []string
+	for _, v := range e.Value {
+		res = append(res, fmt.Sprint(v))
+	}
+	return "(" + strings.Join(res, " ") + ")"
+}
+
 type Def struct {
-	Pos
+	Id    int
 	Name  string
 	Value Expr
+}
+
+func (e Def) ExprId() int {
+	return e.Id
+}
+func (e Def) String() string {
+	return fmt.Sprintf("(var %s %s)", e.Name, e.Value)
 }
 
 type Set struct {
-	Pos
+	Id    int
 	Name  string
 	Value Expr
 }
 
-type Proc func(...Expr) (Expr, bool)
+func (e Set) ExprId() int {
+	return e.Id
+}
+func (e Set) String() string {
+	return fmt.Sprintf("(set %s %s)", e.Name, e.Value)
+}
+
+type If struct {
+	Id   int
+	Pred Expr
+	Then Expr
+	Else Expr
+}
+
+func (e If) ExprId() int {
+	return e.Id
+}
+func (e If) String() string {
+	return fmt.Sprintf("(if %s %s %s)", e.Pred, e.Then, e.Else)
+}
 
 type Builtin struct {
-	Pos
+	Id   int
 	Name string
-	Proc Proc
+}
+
+func (e Builtin) ExprId() int {
+	return e.Id
+}
+func (e Builtin) String() string {
+	return fmt.Sprintf("<builtin %s>", e.Name)
 }
 
 type Closure struct {
-	Pos
+	Id     int
 	Env    Env
 	Params []string
-	Body   Expr
+	Body   []Expr
 }
 
-type Pos struct {
-	line   int
-	column int
+func (e Closure) ExprId() int {
+	return e.Id
+}
+func (e Closure) String() string {
+	return "<closure>"
 }
 
 type Env []map[string]Expr
 
-func ErrorInfo(file string, expr Expr, info ...string) string {
-	return fmt.Sprintf("%s:%d:%d: (%s) %s", file, expr.Line(), expr.Column(), fmt.Sprintf("%T", expr), strings.Join(info, " "))
-}
-
-func NewPos(line, column int) Pos {
-	return Pos{line, column}
-}
-
-func (p Pos) Line() int {
-	return p.line
-}
-
-func (p Pos) Column() int {
-	return p.column
-}
-
 func NewInt(value int, pos ...int) Int {
 	if len(pos) == 2 {
-		return Int{Pos{pos[0], pos[1]}, value}
+		return Int{getId(), value}
 	}
-	return Int{Pos{0, 0}, value}
+	return Int{getId(), value}
 }
 
 func NewString(value string, pos ...int) String {
 	if len(pos) == 2 {
-		return String{Pos{pos[0], pos[1]}, value}
+		return String{getId(), value}
 	}
-	return String{Pos{0, 0}, value}
+	return String{getId(), value}
+}
+
+func NewBool(value bool, pos ...int) Bool {
+	return Bool{getId(), value}
 }
 
 func NewSymbol(value string, pos ...int) Symbol {
 	if len(pos) == 2 {
-		return Symbol{Pos{pos[0], pos[1]}, value}
+		return Symbol{getId(), value}
 	}
-	return Symbol{Pos{0, 0}, value}
+	return Symbol{getId(), value}
 }
 
 func NewList(values ...Expr) List {
-	return List{Pos{0, 0}, values}
+	return List{getId(), values}
 }
 
 func NewDef(name string, value Expr) Def {
-	return Def{Pos{0, 0}, name, value}
+	return Def{getId(), name, value}
 }
 
 func NewSet(name string, value Expr) Set {
-	return Set{NewPos(0, 0), name, value}
+	return Set{getId(), name, value}
 }
 
-func NewBuiltin(name string, proc Proc) Builtin {
-	return Builtin{NewPos(0, 0), name, proc}
+func NewIf(pred, then, _else Expr) If {
+	return If{getId(), pred, then, _else}
 }
 
-func NewClosure(env Env, params []string, body Expr) Closure {
-	return Closure{NewPos(0, 0), env, params, body}
+func NewBuiltin(name string) Builtin {
+	return Builtin{getId(), name}
+}
+
+func NewClosure(env Env, params []string, body []Expr) Closure {
+	return Closure{getId(), env, params, body}
 }
 
 func NewEnv() Env {
