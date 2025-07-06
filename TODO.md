@@ -64,3 +64,19 @@ builtin: funcitonailyt that cannot be implemented in language itself
 function: can be implemented in itself
 syntax sugar: can be replaced as language code (may not be able to be implemeted as function), as a language keyword, not redefinable, can be implemented
 macro: not precise error info, similar to syntax sugar, but not a language keyword
+
+```
+expr = int | string | bool | symbol | nil | quote | var | set | if | fn | | macro | list
+var = "(" "var" symbol expr ")"
+set = "(" "set" symbol expr ")"
+if = "(" "if" expr expr expr? ")"
+fn = "(" "fn" symbol? "[" symbol* "]" expr* ")"
+quote = "'" expr
+macro = "(" "macro" symbol "[" symbol* "]" expr* ")"
+list = "(" expr* ")"
+```
+
+macro:
+(macro and [a b] '(if a b false))
+'(if a b false) => (list 'if 'a 'b 'false)
+(and true false)

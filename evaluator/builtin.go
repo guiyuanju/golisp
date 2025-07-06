@@ -13,16 +13,31 @@ type Builtins map[string]Proc
 func NewBuiltins() Builtins {
 	res := map[string]Proc{}
 	res["+"] = plus
+	res["-"] = minus
 	res["print"] = print
 	res["do"] = do
 	res["="] = equal
+	res[">"] = greater
+	res["<"] = less
+	res["<="] = lessEqual
+	res[">="] = greaterEqual
 	res[":"] = _append
 	res["list"] = list
+	res["not"] = not
+	res["type"] = _type
 	return res
 }
 
+func _type(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	if len(values) < 2 {
+		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need at least 1 argumte"))
+		return nil, false
+	}
+	return expr.NewString(values[1].ExprName()), true
+}
+
 func list(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
-	return expr.NewList(values...), true
+	return expr.NewList(values[1:]...), true
 }
 
 func _append(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
@@ -79,6 +94,101 @@ func equal(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	return expr.NewBool(true), true
 }
 
+func not(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	if len(values) < 2 {
+		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need at least 1 argumtes"))
+		return nil, false
+	}
+	if isTruthy(values[1]) {
+		return expr.NewBool(false), true
+	}
+	return expr.NewBool(true), true
+}
+
+func less(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	gt, ok := greater(e, values...)
+	if !ok {
+		return gt, ok
+	}
+	eq, ok := equal(e, values...)
+	if !ok {
+		return eq, ok
+	}
+	return expr.NewBool(!gt.(expr.Bool).Value && !eq.(expr.Bool).Value), true
+}
+
+func greaterEqual(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	eq, ok := equal(e, values...)
+	if !ok {
+		return eq, ok
+	}
+	if eq.(expr.Bool).Value {
+		return expr.NewBool(true), true
+	}
+	gt, ok := greater(e, values...)
+	if !ok {
+		return gt, ok
+	}
+	if gt.(expr.Bool).Value {
+		return expr.NewBool(true), true
+	}
+	return expr.NewBool(false), true
+}
+
+func lessEqual(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	res, ok := greater(e, values...)
+	if !ok {
+		return res, ok
+	}
+	return not(e, res)
+}
+
+func greater(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	if len(values) < 3 {
+		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need at least 2 argumtes"))
+		return nil, false
+	}
+	switch value := values[1].(type) {
+	case expr.Int:
+		prev := value.Value
+		for i := 2; i < len(values); i++ {
+			if v, ok := values[i].(expr.Int); ok {
+				if v.Value <= prev {
+					return expr.NewBool(false), true
+				}
+				prev = v.Value
+			} else {
+				fmt.Println(e.errorInfo("repl", v, "expect int"))
+				return nil, false
+			}
+		}
+		return expr.NewBool(true), true
+	case expr.String:
+		prev := value.Value
+		for i := 2; i < len(values); i++ {
+			switch v := values[i].(type) {
+			case expr.String:
+				if v.Value <= prev {
+					return expr.NewBool(false), true
+				}
+				prev = v.Value
+			case expr.Int:
+				str := strconv.Itoa(v.Value)
+				if str <= prev {
+					return expr.NewBool(false), true
+				}
+				prev = str
+			default:
+				fmt.Println(e.errorInfo("repl", v, "expect string or int"))
+				return nil, false
+			}
+		}
+		return expr.NewBool(true), true
+	}
+	fmt.Println(e.errorInfo("repl", values[1], "expect string or int"))
+	return nil, false
+}
+
 func do(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	if len(values) == 0 {
 		return nil, true
@@ -100,7 +210,7 @@ func print(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 func plus(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	op := values[0]
 	if len(values) < 3 {
-		fmt.Println(e.errorInfo("repl", op.(expr.Symbol), op.(expr.Symbol).Value, "need at least twp argument"))
+		fmt.Println(e.errorInfo("repl", op, "need at least two argument"))
 		return nil, false
 	}
 
@@ -112,6 +222,7 @@ func plus(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 				res += v.Value
 			} else {
 				fmt.Println(e.errorInfo("repl", v, "expect int"))
+				return nil, false
 			}
 		}
 		return expr.NewInt(res), true
@@ -132,5 +243,30 @@ func plus(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	}
 
 	fmt.Println(e.errorInfo("repl", values[1], "unsupported operand for +: expect int or string"))
+	return nil, false
+}
+
+func minus(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	op := values[0]
+	if len(values) < 3 {
+		fmt.Println(e.errorInfo("repl", op, "need at least two argument"))
+		return nil, false
+	}
+
+	switch value := values[1].(type) {
+	case expr.Int:
+		res := value.Value
+		for i := 2; i < len(values); i++ {
+			if v, ok := values[i].(expr.Int); ok {
+				res -= v.Value
+			} else {
+				fmt.Println(e.errorInfo("repl", v, "expect int"))
+				return nil, false
+			}
+		}
+		return expr.NewInt(res), true
+	}
+
+	fmt.Println(e.errorInfo("repl", values[1], "unsupported operand for -: expect int"))
 	return nil, false
 }

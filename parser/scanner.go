@@ -25,6 +25,8 @@ const (
 	SET
 	FN
 	SYMBOL
+	NIL
+	MACRO
 )
 
 type Token struct {
@@ -147,8 +149,12 @@ func (s *Scanner) Scan() ([]Token, bool) {
 				res = append(res, s.newToken(VAR, nil))
 			} else if s.consume("set") {
 				res = append(res, s.newToken(SET, nil))
+			} else if s.consume("nil") {
+				res = append(res, s.newToken(NIL, nil))
 			} else if s.consume("fn") {
 				res = append(res, s.newToken(FN, nil))
+			} else if s.consume("macro") {
+				res = append(res, s.newToken(MACRO, nil))
 			} else {
 				res = append(res, s.newToken(SYMBOL, s.symbol()))
 			}

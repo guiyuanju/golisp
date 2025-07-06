@@ -15,6 +15,7 @@ func getId() int {
 
 type Expr interface {
 	ExprId() int
+	ExprName() string
 }
 
 type Int struct {
@@ -24,6 +25,9 @@ type Int struct {
 
 func (e Int) ExprId() int {
 	return e.Id
+}
+func (e Int) ExprName() string {
+	return "int"
 }
 func (e Int) String() string {
 	return fmt.Sprint(e.Value)
@@ -37,6 +41,9 @@ type String struct {
 func (e String) ExprId() int {
 	return e.Id
 }
+func (e String) ExprName() string {
+	return "string"
+}
 func (e String) String() string {
 	return fmt.Sprint(e.Value)
 }
@@ -48,6 +55,9 @@ type Bool struct {
 
 func (e Bool) ExprId() int {
 	return e.Id
+}
+func (e Bool) ExprName() string {
+	return "bool"
 }
 func (e Bool) String() string {
 	return fmt.Sprint(e.Value)
@@ -61,8 +71,57 @@ type Symbol struct {
 func (e Symbol) ExprId() int {
 	return e.Id
 }
+func (e Symbol) ExprName() string {
+	return "symbol"
+}
 func (e Symbol) String() string {
 	return fmt.Sprint(e.Value)
+}
+
+type Nil struct {
+	Id int
+}
+
+func (e Nil) ExprId() int {
+	return e.Id
+}
+func (e Nil) ExprName() string {
+	return "nil"
+}
+func (e Nil) String() string {
+	return "nil"
+}
+
+type Quote struct {
+	Id    int
+	Value Expr
+}
+
+func (e Quote) ExprId() int {
+	return e.Id
+}
+func (e Quote) ExprName() string {
+	return "quote"
+}
+func (e Quote) String() string {
+	return fmt.Sprintf("'%s", e.Value)
+}
+
+type Macro struct {
+	Id     int
+	Name   string
+	Params []string
+	Body   []Expr
+}
+
+func (e Macro) ExprId() int {
+	return e.Id
+}
+func (e Macro) ExprName() string {
+	return "macro"
+}
+func (e Macro) String() string {
+	return fmt.Sprintf("<macro %s>", e.Name)
 }
 
 type List struct {
@@ -72,6 +131,9 @@ type List struct {
 
 func (e List) ExprId() int {
 	return e.Id
+}
+func (e List) ExprName() string {
+	return "list"
 }
 func (e List) String() string {
 	var res []string
@@ -90,6 +152,9 @@ type Def struct {
 func (e Def) ExprId() int {
 	return e.Id
 }
+func (e Def) ExprName() string {
+	return "var"
+}
 func (e Def) String() string {
 	return fmt.Sprintf("(var %s %s)", e.Name, e.Value)
 }
@@ -102,6 +167,9 @@ type Set struct {
 
 func (e Set) ExprId() int {
 	return e.Id
+}
+func (e Set) ExprName() string {
+	return "set"
 }
 func (e Set) String() string {
 	return fmt.Sprintf("(set %s %s)", e.Name, e.Value)
@@ -117,6 +185,9 @@ type If struct {
 func (e If) ExprId() int {
 	return e.Id
 }
+func (e If) ExprName() string {
+	return "if"
+}
 func (e If) String() string {
 	return fmt.Sprintf("(if %s %s %s)", e.Pred, e.Then, e.Else)
 }
@@ -128,6 +199,9 @@ type Builtin struct {
 
 func (e Builtin) ExprId() int {
 	return e.Id
+}
+func (e Builtin) ExprName() string {
+	return "builtin"
 }
 func (e Builtin) String() string {
 	return fmt.Sprintf("<builtin %s>", e.Name)
@@ -143,35 +217,37 @@ type Closure struct {
 func (e Closure) ExprId() int {
 	return e.Id
 }
+func (e Closure) ExprName() string {
+	return "closure"
+}
 func (e Closure) String() string {
 	return "<closure>"
 }
 
 type Env []map[string]Expr
 
-func NewInt(value int, pos ...int) Int {
-	if len(pos) == 2 {
-		return Int{getId(), value}
-	}
+func NewInt(value int) Int {
 	return Int{getId(), value}
 }
 
-func NewString(value string, pos ...int) String {
-	if len(pos) == 2 {
-		return String{getId(), value}
-	}
+func NewString(value string) String {
 	return String{getId(), value}
 }
 
-func NewBool(value bool, pos ...int) Bool {
+func NewBool(value bool) Bool {
 	return Bool{getId(), value}
 }
 
-func NewSymbol(value string, pos ...int) Symbol {
-	if len(pos) == 2 {
-		return Symbol{getId(), value}
-	}
+func NewSymbol(value string) Symbol {
 	return Symbol{getId(), value}
+}
+
+func NewQuote(value Expr) Quote {
+	return Quote{getId(), value}
+}
+
+func NewMacro(name string, params []string, body []Expr) Macro {
+	return Macro{getId(), name, params, body}
 }
 
 func NewList(values ...Expr) List {

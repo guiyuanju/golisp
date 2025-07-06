@@ -37,13 +37,6 @@ func (p *Parser) withPosOfToken(expr expr.Expr, token Token) expr.Expr {
 	return expr
 }
 
-// expr = int | string | bool | symbol | var | set | if | fn | list
-// var = "(" "var" symbol expr ")"
-// set = "(" "set" symbol expr ")"
-// if = "(" "if" expr expr expr? ")"
-// fn = "(" "fn" symbol? "[" symbol* "]" expr* ")"
-// list = "(" expr* ")"
-
 func (p *Parser) expr() (expr.Expr, bool) {
 	if p.isEnd() {
 		fmt.Println(errorInfo(p.previous(), "expect a expr after it"))
@@ -66,10 +59,18 @@ func (p *Parser) expr() (expr.Expr, bool) {
 	case SYMBOL:
 		p.advance()
 		return p.withPosOfToken(expr.NewSymbol(cur.Value.(string)), cur), true
+	case QUOTE:
+		p.advance()
+		v, ok := p.expr()
+		if !ok {
+			return nil, false
+		}
+		return p.withPosOfToken(expr.NewQuote(v), cur), true
 	case LEFT_PAREN:
 		return p.list()
 	}
-	panic("unreachable")
+	fmt.Println(errorInfo(cur, "unexpected token"))
+	return nil, false
 }
 
 func (p *Parser) list() (expr.Expr, bool) {
@@ -186,6 +187,42 @@ func (p *Parser) list() (expr.Expr, bool) {
 		}
 		return p.withPosOfToken(expr.NewClosure(nil, params, body), cur), true
 
+	case MACRO:
+		p.advance()
+		name, ok := p.consume(SYMBOL)
+		if !ok {
+			return nil, false
+		}
+		_, ok = p.consume(LEFT_BRACKET)
+		if !ok {
+			return nil, false
+		}
+		var params []string
+		for !p.isEnd() && p.cur().TokenType != RIGHT_BRACKET {
+			p, ok := p.consume(SYMBOL)
+			if !ok {
+				return nil, false
+			}
+			params = append(params, p.Value.(string))
+		}
+		_, ok = p.consume(RIGHT_BRACKET)
+		if !ok {
+			return nil, false
+		}
+		var body []expr.Expr
+		for !p.isEnd() && p.cur().TokenType != RIGHT_PAREN {
+			b, ok := p.expr()
+			if !ok {
+				return nil, false
+			}
+			body = append(body, b)
+		}
+		_, ok = p.consume(RIGHT_PAREN)
+		if !ok {
+			return nil, ok
+		}
+		return p.withPosOfToken(expr.NewMacro(name.Value.(string), params, body), cur), true
+
 	default:
 		var res []expr.Expr
 		for !p.isEnd() && p.cur().TokenType != RIGHT_PAREN {
@@ -229,5 +266,13 @@ func errorInfo(token Token, info string) string {
 }
 
 func (p *Parser) Parse() (expr.Expr, bool) {
-	return p.expr()
+	var last expr.Expr
+	for !p.isEnd() {
+		res, ok := p.expr()
+		if !ok {
+			return last, ok
+		}
+		last = res
+	}
+	return last, true
 }

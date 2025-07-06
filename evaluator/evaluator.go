@@ -39,6 +39,12 @@ func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 		fmt.Println(evaluator.errorInfo("repl", e, "undefined:", e.Value))
 		return nil, false
 
+	case expr.Nil:
+		return e, true
+
+	case expr.Quote:
+		return e.Value, true
+
 	case expr.Def:
 		value, ok := evaluator.Eval(e.Value)
 		if !ok {
@@ -160,11 +166,12 @@ func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 }
 
 func isTruthy(e expr.Expr) bool {
-	if e == nil {
-		return false
-	}
-	if e, ok := e.(expr.Bool); ok {
+	switch e := e.(type) {
+	case expr.Bool:
 		return e.Value
+	case expr.Nil:
+		return false
+	default:
+		return true
 	}
-	return true
 }
