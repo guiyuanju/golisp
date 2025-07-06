@@ -8,15 +8,6 @@ import (
 	"strings"
 )
 
-const (
-	SF_QUOTE = "quote"
-	SF_VAR   = "var"
-	SF_SET   = "set"
-	SF_IF    = "if"
-	SF_FN    = "fn"
-	SF_MACRO = "macro"
-)
-
 type Evaluator struct {
 	env       expr.Env
 	Positions parser.Positions
@@ -45,7 +36,7 @@ func isSpecialForm(e expr.List) bool {
 		return false
 	}
 	switch s.Value {
-	case SF_QUOTE, SF_VAR, SF_SET, SF_IF, SF_FN, SF_MACRO:
+	case expr.SF_QUOTE, expr.SF_VAR, expr.SF_SET, expr.SF_IF, expr.SF_FN, expr.SF_MACRO:
 		return true
 	default:
 		return false
@@ -55,14 +46,14 @@ func isSpecialForm(e expr.List) bool {
 func (evaluator Evaluator) evalSpecialForm(e expr.List) (expr.Expr, bool) {
 	s := e.Value[0].(expr.Symbol)
 	switch s.Value {
-	case SF_QUOTE:
+	case expr.SF_QUOTE:
 		if len(e.Value) != 2 {
 			fmt.Println(evaluator.errorInfo("repl", s, "expect 1 argument"))
 			return nil, false
 		}
 		return e.Value[1], true
 
-	case SF_VAR:
+	case expr.SF_VAR:
 		if len(e.Value) < 3 {
 			fmt.Println(evaluator.errorInfo("repl", s, "expect 2 arguments"))
 			return nil, false
@@ -82,7 +73,7 @@ func (evaluator Evaluator) evalSpecialForm(e expr.List) (expr.Expr, bool) {
 		}
 		return expr.NewNil(), true
 
-	case SF_SET:
+	case expr.SF_SET:
 		if len(e.Value) < 3 {
 			fmt.Println(evaluator.errorInfo("repl", s, "expect 2 arguments"))
 			return nil, false
@@ -102,7 +93,7 @@ func (evaluator Evaluator) evalSpecialForm(e expr.List) (expr.Expr, bool) {
 		}
 		return expr.NewNil(), true
 
-	case SF_IF:
+	case expr.SF_IF:
 		if len(e.Value) < 3 {
 			fmt.Println(evaluator.errorInfo("repl", s, "expect at least two arguments"))
 			return nil, false
@@ -119,7 +110,7 @@ func (evaluator Evaluator) evalSpecialForm(e expr.List) (expr.Expr, bool) {
 		}
 		return evaluator.Eval(e.Value[3])
 
-	case SF_FN:
+	case expr.SF_FN:
 		if len(e.Value) < 2 {
 			fmt.Println(evaluator.errorInfo("repl", s, "expect an argument list"))
 			return nil, false
@@ -157,14 +148,14 @@ func (evaluator Evaluator) evalSpecialForm(e expr.List) (expr.Expr, bool) {
 			// redispatch to (var (fn [...] ...))
 			newFn := []expr.Expr{e.Value[0]}
 			newFn = append(newFn, e.Value[2:]...)
-			newVar := expr.NewList(expr.NewSymbol(SF_VAR), expr.NewSymbol(name), expr.NewList(newFn...))
+			newVar := expr.NewList(expr.NewSymbol(expr.SF_VAR), expr.NewSymbol(name), expr.NewList(newFn...))
 			return evaluator.Eval(newVar)
 		default:
 			fmt.Println(evaluator.errorInfo("repl", e, "expect a symbol or an argument list"))
 			return nil, false
 		}
 
-	case SF_MACRO:
+	case expr.SF_MACRO:
 		return nil, false
 
 	default:

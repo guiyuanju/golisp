@@ -5,6 +5,15 @@ import (
 	"strings"
 )
 
+const (
+	SF_QUOTE = "quote"
+	SF_VAR   = "var"
+	SF_SET   = "set"
+	SF_IF    = "if"
+	SF_FN    = "fn"
+	SF_MACRO = "macro"
+)
+
 var id int
 
 func getId() int {
@@ -92,21 +101,6 @@ func (e Nil) String() string {
 	return "nil"
 }
 
-type Quote struct {
-	Id    int
-	Value Expr
-}
-
-func (e Quote) ExprId() int {
-	return e.Id
-}
-func (e Quote) ExprName() string {
-	return "quote"
-}
-func (e Quote) String() string {
-	return fmt.Sprintf("'%s", e.Value)
-}
-
 type Macro struct {
 	Id     int
 	Name   string
@@ -160,55 +154,6 @@ func (e List) String() string {
 		res = append(res, fmt.Sprint(v))
 	}
 	return "(" + strings.Join(res, " ") + ")"
-}
-
-type Def struct {
-	Id    int
-	Name  string
-	Value Expr
-}
-
-func (e Def) ExprId() int {
-	return e.Id
-}
-func (e Def) ExprName() string {
-	return "var"
-}
-func (e Def) String() string {
-	return fmt.Sprintf("(var %s %s)", e.Name, e.Value)
-}
-
-type Set struct {
-	Id    int
-	Name  string
-	Value Expr
-}
-
-func (e Set) ExprId() int {
-	return e.Id
-}
-func (e Set) ExprName() string {
-	return "set"
-}
-func (e Set) String() string {
-	return fmt.Sprintf("(set %s %s)", e.Name, e.Value)
-}
-
-type If struct {
-	Id   int
-	Pred Expr
-	Then Expr
-	Else Expr
-}
-
-func (e If) ExprId() int {
-	return e.Id
-}
-func (e If) ExprName() string {
-	return "if"
-}
-func (e If) String() string {
-	return fmt.Sprintf("(if %s %s %s)", e.Pred, e.Then, e.Else)
 }
 
 type Builtin struct {
@@ -265,10 +210,6 @@ func NewNil() Nil {
 	return Nil{getId()}
 }
 
-func NewQuote(value Expr) Quote {
-	return Quote{getId(), value}
-}
-
 func NewMacro(name string, params []string, body []Expr) Macro {
 	return Macro{getId(), name, params, body}
 }
@@ -279,18 +220,6 @@ func NewList(values ...Expr) List {
 
 func NewVector(values ...Expr) Vector {
 	return Vector{getId(), values}
-}
-
-func NewDef(name string, value Expr) Def {
-	return Def{getId(), name, value}
-}
-
-func NewSet(name string, value Expr) Set {
-	return Set{getId(), name, value}
-}
-
-func NewIf(pred, then, _else Expr) If {
-	return If{getId(), pred, then, _else}
 }
 
 func NewBuiltin(name string) Builtin {

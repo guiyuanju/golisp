@@ -65,7 +65,7 @@ func (p *Parser) expr() (expr.Expr, bool) {
 		if !ok {
 			return nil, false
 		}
-		return p.withPosOfToken(expr.NewQuote(v), cur), true
+		return expr.NewList(expr.NewSymbol(expr.SF_QUOTE), v), true
 	case LEFT_BRACKET:
 		res, ok := p.vector()
 		if !ok {
