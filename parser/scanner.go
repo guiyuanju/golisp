@@ -107,6 +107,8 @@ func (s *Scanner) Scan() ([]Token, bool) {
 			s.advance()
 		case ' ':
 			s.advance()
+		case ';':
+			s.comment()
 		case '(':
 			res = append(res, s.newToken(LEFT_PAREN, nil))
 			s.advance()
@@ -143,6 +145,12 @@ func (s *Scanner) Scan() ([]Token, bool) {
 		}
 	}
 	return res, true
+}
+
+func (s *Scanner) comment() {
+	for !s.isEnd() && s.cur() != '\n' {
+		s.advance()
+	}
 }
 
 func (s *Scanner) symbol() string {
