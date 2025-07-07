@@ -7,6 +7,12 @@
         (+ (fib (- x 1))
            (fib (- x 2)))))
 
+(macro timeit [forms]
+    (list 'let '[start (time)]
+        (list 'do
+            forms
+            '(nano->milisec (- (time) start)))))
+
 (var form '(timeit (fib 30)))
 
 (print (macroexpand form))
