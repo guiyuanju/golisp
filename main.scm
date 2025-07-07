@@ -6,4 +6,5 @@
 
 (var form '(timeit (fib 30)))
 (print (macroexpand form))
+(print (macroexpand (macroexpand form)))
 (print (eval form))

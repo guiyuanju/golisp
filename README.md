@@ -8,8 +8,13 @@
            (fib (- x 2)))))
 
 (var form '(timeit (fib 30)))
+
 (print (macroexpand form))
 ; => (let [start (time)] (do (fib 30) (nano->milisec (- (time) start))))
+
+(print (macroexpand (macroexpand form)))
+; => ((fn [] (var start (time)) (do (fib 30) (nano->milisec (- (time) start)))))
+
 (print (eval form))
 ; => 8397 miliseconds
 ```
