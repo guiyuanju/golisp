@@ -62,32 +62,8 @@ func equal(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need at least 2 argumtes"))
 		return nil, false
 	}
-	var compare func(a, b expr.Expr) bool
-	compare = func(a, b expr.Expr) bool {
-		// two nils equal
-		if a == nil || b == nil {
-			return a == b
-		}
-		la, ok1 := a.(expr.List)
-		lb, ok2 := b.(expr.List)
-		if ok1 || ok2 {
-			if !(ok1 && ok2) {
-				return false
-			}
-			if len(la.Value) != len(lb.Value) {
-				return false
-			}
-			for i := range len(la.Value) {
-				if !compare(la.Value[i], lb.Value[i]) {
-					return false
-				}
-			}
-			return true
-		}
-		return a == b
-	}
-	for i := 1; i < len(values); i++ {
-		if !compare(values[i-1], values[i]) {
+	for i := 2; i < len(values); i++ {
+		if !values[i-1].Equal(values[i]) {
 			return expr.NewBool(false), true
 		}
 	}
@@ -138,9 +114,9 @@ func greaterEqual(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 func lessEqual(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	res, ok := greater(e, values...)
 	if !ok {
-		return res, ok
+		return nil, false
 	}
-	return not(e, res)
+	return not(e, []expr.Expr{values[0], res}...)
 }
 
 func greater(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
@@ -153,7 +129,7 @@ func greater(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 		prev := value.Value
 		for i := 2; i < len(values); i++ {
 			if v, ok := values[i].(expr.Int); ok {
-				if v.Value <= prev {
+				if v.Value >= prev {
 					return expr.NewBool(false), true
 				}
 				prev = v.Value
@@ -168,13 +144,13 @@ func greater(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 		for i := 2; i < len(values); i++ {
 			switch v := values[i].(type) {
 			case expr.String:
-				if v.Value <= prev {
+				if v.Value >= prev {
 					return expr.NewBool(false), true
 				}
 				prev = v.Value
 			case expr.Int:
 				str := strconv.Itoa(v.Value)
-				if str <= prev {
+				if str >= prev {
 					return expr.NewBool(false), true
 				}
 				prev = str
