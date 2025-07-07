@@ -25,6 +25,7 @@ func getId() int {
 type Expr interface {
 	ExprId() int
 	ExprName() string
+	Equal(Expr) bool
 }
 
 type Int struct {
@@ -41,6 +42,12 @@ func (e Int) ExprName() string {
 func (e Int) String() string {
 	return fmt.Sprint(e.Value)
 }
+func (e Int) Equal(other Expr) bool {
+	if o, ok := other.(Int); ok {
+		return e.Value == o.Value
+	}
+	return false
+}
 
 type String struct {
 	Id    int
@@ -55,6 +62,12 @@ func (e String) ExprName() string {
 }
 func (e String) String() string {
 	return fmt.Sprint(e.Value)
+}
+func (e String) Equal(other Expr) bool {
+	if o, ok := other.(String); ok {
+		return e.Value == o.Value
+	}
+	return false
 }
 
 type Bool struct {
@@ -71,6 +84,12 @@ func (e Bool) ExprName() string {
 func (e Bool) String() string {
 	return fmt.Sprint(e.Value)
 }
+func (e Bool) Equal(other Expr) bool {
+	if o, ok := other.(Bool); ok {
+		return e.Value == o.Value
+	}
+	return false
+}
 
 type Symbol struct {
 	Id    int
@@ -86,6 +105,12 @@ func (e Symbol) ExprName() string {
 func (e Symbol) String() string {
 	return fmt.Sprint(e.Value)
 }
+func (e Symbol) Equal(other Expr) bool {
+	if o, ok := other.(Symbol); ok {
+		return e.Value == o.Value
+	}
+	return false
+}
 
 type Nil struct {
 	Id int
@@ -99,6 +124,12 @@ func (e Nil) ExprName() string {
 }
 func (e Nil) String() string {
 	return "nil"
+}
+func (e Nil) Equal(other Expr) bool {
+	if _, ok := other.(Nil); ok {
+		return true
+	}
+	return false
 }
 
 type Macro struct {
@@ -116,6 +147,9 @@ func (e Macro) ExprName() string {
 }
 func (e Macro) String() string {
 	return fmt.Sprintf("<macro %s>", e.Name)
+}
+func (e Macro) Equal(other Expr) bool {
+	return e.ExprId() == other.ExprId()
 }
 
 type Vector struct {
@@ -136,6 +170,20 @@ func (e Vector) String() string {
 	}
 	return "[" + strings.Join(res, " ") + "]"
 }
+func (e Vector) Equal(other Expr) bool {
+	if o, ok := other.(Vector); ok {
+		if len(e.Value) != len(o.Value) {
+			return false
+		}
+		for i := range e.Value {
+			if !e.Value[i].Equal(o.Value[i]) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
 
 type List struct {
 	Id    int
@@ -155,6 +203,20 @@ func (e List) String() string {
 	}
 	return "(" + strings.Join(res, " ") + ")"
 }
+func (e List) Equal(other Expr) bool {
+	if o, ok := other.(List); ok {
+		if len(e.Value) != len(o.Value) {
+			return false
+		}
+		for i := range e.Value {
+			if !e.Value[i].Equal(o.Value[i]) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
 
 type Builtin struct {
 	Id   int
@@ -169,6 +231,9 @@ func (e Builtin) ExprName() string {
 }
 func (e Builtin) String() string {
 	return fmt.Sprintf("<builtin %s>", e.Name)
+}
+func (e Builtin) Equal(other Expr) bool {
+	return e.ExprId() == other.ExprId()
 }
 
 type Closure struct {
@@ -186,6 +251,9 @@ func (e Closure) ExprName() string {
 }
 func (e Closure) String() string {
 	return "<closure>"
+}
+func (e Closure) Equal(other Expr) bool {
+	return e.ExprId() == other.ExprId()
 }
 
 type Env []map[string]Expr
