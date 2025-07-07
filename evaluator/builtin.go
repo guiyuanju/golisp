@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"golisp/expr"
 	"strconv"
+	"time"
 )
 
 type Proc func(e Evaluator, exprs ...expr.Expr) (expr.Expr, bool)
@@ -14,6 +15,8 @@ func NewBuiltins() Builtins {
 	res := map[string]Proc{}
 	res["+"] = plus
 	res["-"] = minus
+	res["*"] = multiply
+	res["/"] = divide
 	res["print"] = print
 	res["do"] = do
 	res["="] = equal
@@ -26,7 +29,104 @@ func NewBuiltins() Builtins {
 	res["not"] = not
 	res["type"] = _type
 	res["macroexpand"] = macroexpand
+	res["time"] = _time
+	res["."] = dot
+	res["len"] = length
 	return res
+}
+
+func length(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	if len(values) < 2 {
+		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need 1 argument"))
+		return nil, false
+	}
+	switch seq := values[1].(type) {
+	case expr.List:
+		return expr.NewInt(len(seq.Value)), true
+	case expr.Vector:
+		return expr.NewInt(len(seq.Value)), true
+	default:
+		fmt.Println(e.errorInfo("repl", values[1], "unsupported type for len"))
+		return nil, false
+	}
+}
+
+func dot(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	if len(values) < 3 {
+		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need 2 arguments"))
+		return nil, false
+	}
+	switch seq := values[1].(type) {
+	case expr.List:
+		idx, ok := values[2].(expr.Int)
+		if !ok {
+			fmt.Println(e.errorInfo("repl", values[2], "expect int"))
+			return nil, false
+		}
+		if idx.Value >= len(seq.Value) {
+			fmt.Println(e.errorInfo("repl", values[2], fmt.Sprintf("index %d out of bound %d", idx.Value, len(seq.Value))))
+			return nil, false
+		}
+		return seq.Value[idx.Value], true
+	case expr.Vector:
+		idx, ok := values[2].(expr.Int)
+		if !ok {
+			fmt.Println(e.errorInfo("repl", values[2], "expect int"))
+			return nil, false
+		}
+		if idx.Value >= len(seq.Value) {
+			fmt.Println(e.errorInfo("repl", values[2], fmt.Sprintf("index %d out of bound %d", idx.Value, len(seq.Value))))
+			return nil, false
+		}
+		return seq.Value[idx.Value], true
+	default:
+		fmt.Println(e.errorInfo("repl", values[1], "unsupported type for dot"))
+		return nil, false
+	}
+}
+
+func multiply(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	if len(values) < 3 {
+		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need at least 2 argumte"))
+		return nil, false
+	}
+	var res int = 1
+	for _, v := range values[1:] {
+		n, ok := v.(expr.Int)
+		if !ok {
+			fmt.Println(e.errorInfo("repl", values[0], "expect int"))
+			return nil, false
+		}
+		res *= n.Value
+	}
+	return expr.NewInt(res), true
+}
+
+func divide(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	if len(values) < 3 {
+		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need at least 2 argumte"))
+		return nil, false
+	}
+	v, ok := values[1].(expr.Int)
+	if !ok {
+		fmt.Println(e.errorInfo("repl", values[0], "expect int"))
+		return nil, false
+	}
+	res := v.Value
+	for _, v := range values[2:] {
+		n, ok := v.(expr.Int)
+		if !ok {
+			fmt.Println(e.errorInfo("repl", values[0], "expect int"))
+			return nil, false
+		}
+		res /= n.Value
+	}
+	return expr.NewInt(res), true
+}
+
+func _time(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	nano := time.Now().UnixNano()
+	return expr.NewInt(int(nano)), true
 }
 
 func macroexpand(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
