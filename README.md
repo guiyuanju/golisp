@@ -36,7 +36,7 @@
 2. `go build`
 3. `./golisp` for REPL or `./golisp filename` for file
 
-Features:
+## Features
 - [x] primitives
   - [x] bool
   - [x] int
