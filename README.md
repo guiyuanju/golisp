@@ -26,7 +26,7 @@
 ; => ((fn [] (var start (time)) (do (fib 30) (nano->milisec (- (time) start)))))
 
 ; eval
-(print (eval form))
+(print (eval form) "miliseconds")
 ; => 8397 miliseconds
 ```
 
