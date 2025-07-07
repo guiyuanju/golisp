@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	prelude, err := os.ReadFile("./stdlib/prelude.lip")
+	prelude, err := os.ReadFile("./stdlib/prelude.scm")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -58,27 +58,35 @@ func dot(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	}
 	switch seq := values[1].(type) {
 	case expr.List:
-		idx, ok := values[2].(expr.Int)
+		v, ok := values[2].(expr.Int)
 		if !ok {
 			fmt.Println(e.errorInfo("repl", values[2], "expect int"))
 			return nil, false
 		}
-		if idx.Value >= len(seq.Value) {
-			fmt.Println(e.errorInfo("repl", values[2], fmt.Sprintf("index %d out of bound %d", idx.Value, len(seq.Value))))
+		idx := v.Value
+		if idx < 0 {
+			idx += len(seq.Value)
+		}
+		if idx <= 0 || idx >= len(seq.Value) {
+			fmt.Println(e.errorInfo("repl", values[2], fmt.Sprintf("index %d out of bound %d", idx, len(seq.Value))))
 			return nil, false
 		}
-		return seq.Value[idx.Value], true
+		return seq.Value[idx], true
 	case expr.Vector:
-		idx, ok := values[2].(expr.Int)
+		v, ok := values[2].(expr.Int)
 		if !ok {
 			fmt.Println(e.errorInfo("repl", values[2], "expect int"))
 			return nil, false
 		}
-		if idx.Value >= len(seq.Value) {
-			fmt.Println(e.errorInfo("repl", values[2], fmt.Sprintf("index %d out of bound %d", idx.Value, len(seq.Value))))
+		idx := v.Value
+		if idx < 0 {
+			idx += len(seq.Value)
+		}
+		if idx <= 0 || idx >= len(seq.Value) {
+			fmt.Println(e.errorInfo("repl", values[2], fmt.Sprintf("index %d out of bound %d", idx, len(seq.Value))))
 			return nil, false
 		}
-		return seq.Value[idx.Value], true
+		return seq.Value[idx], true
 	default:
 		fmt.Println(e.errorInfo("repl", values[1], "unsupported type for dot"))
 		return nil, false
@@ -342,15 +350,15 @@ func plus(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 
 func minus(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	op := values[0]
-	if len(values) < 3 {
-		fmt.Println(e.errorInfo("repl", op, "need at least two argument"))
+	if len(values) < 2 {
+		fmt.Println(e.errorInfo("repl", op, "need at least one argument"))
 		return nil, false
 	}
 
-	switch value := values[1].(type) {
+	switch values[1].(type) {
 	case expr.Int:
-		res := value.Value
-		for i := 2; i < len(values); i++ {
+		res := 0
+		for i := 1; i < len(values); i++ {
 			if v, ok := values[i].(expr.Int); ok {
 				res -= v.Value
 			} else {

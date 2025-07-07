@@ -124,8 +124,6 @@ func (s *Scanner) Scan() ([]Token, bool) {
 		case '\'':
 			res = append(res, s.newToken(QUOTE, nil))
 			s.advance()
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			res = append(res, s.newToken(INTEGER, s.number()))
 		case '"':
 			v, ok := s.string()
 			if !ok {
@@ -139,6 +137,8 @@ func (s *Scanner) Scan() ([]Token, bool) {
 				res = append(res, s.newToken(FALSE, nil))
 			} else if s.consume("nil") {
 				res = append(res, s.newToken(NIL, nil))
+			} else if s.isNumber() {
+				res = append(res, s.newToken(INTEGER, s.number()))
 			} else {
 				res = append(res, s.newToken(SYMBOL, s.symbol()))
 			}
@@ -147,10 +147,39 @@ func (s *Scanner) Scan() ([]Token, bool) {
 	return res, true
 }
 
+func (s *Scanner) isNumber() bool {
+	if s.isEnd() {
+		return false
+	}
+	c := s.cur()
+	if isDigit(c) {
+		return true
+	}
+	if c == '-' {
+		next, ok := s.peek(1)
+		if !ok {
+			return false
+		}
+		return isDigit(next)
+	}
+	return false
+}
+
 func (s *Scanner) comment() {
 	for !s.isEnd() && s.cur() != '\n' {
 		s.advance()
 	}
+}
+
+func isDigit(x byte) bool {
+	return '0' <= x && x <= '9'
+}
+
+func (s *Scanner) peek(i int) (byte, bool) {
+	if s.i+i >= len(s.s) {
+		return 0, false
+	}
+	return s.s[s.i+i], true
 }
 
 func (s *Scanner) symbol() string {
@@ -181,14 +210,19 @@ func (s *Scanner) string() (string, bool) {
 }
 
 func (s *Scanner) number() int {
-	isDigit := func(x byte) bool {
-		return '0' <= x && x <= '9'
+	var isNeg bool
+	if s.cur() == '-' {
+		isNeg = true
+		s.advance()
 	}
 	var res int
 	for !s.isEnd() && isDigit(s.cur()) {
 		res = res*10 + int(s.cur()-'0')
 		s.advance()
 		s.length++
+	}
+	if isNeg {
+		return -res
 	}
 	return res
 }
