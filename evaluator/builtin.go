@@ -25,6 +25,7 @@ func NewBuiltins() Builtins {
 	res["<="] = lessEqual
 	res[">="] = greaterEqual
 	res["append"] = _append
+	res[":"] = slice
 	res["list"] = list
 	res["not"] = not
 	res["type"] = _type
@@ -33,6 +34,90 @@ func NewBuiltins() Builtins {
 	res["."] = dot
 	res["len"] = length
 	return res
+}
+
+type Seq interface {
+	Len() int
+	append(v expr.Expr) expr.List
+	slice(start, end int)
+}
+
+func slice(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	if len(values) < 4 {
+		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need 3 arguments"))
+		return nil, false
+	}
+	start, ok := values[1].(expr.Int)
+	if !ok {
+		fmt.Println(e.errorInfo("repl", values[0], "expect int"))
+		return nil, false
+	}
+	end, ok := values[2].(expr.Int)
+	if !ok {
+		fmt.Println(e.errorInfo("repl", values[0], "expect int"))
+		return nil, false
+	}
+	switch seq := values[3].(type) {
+	case expr.List:
+		startIdx := start.Value
+		if startIdx < 0 {
+			startIdx += len(seq.Value)
+		}
+		if startIdx < 0 || startIdx > len(seq.Value) {
+			fmt.Println(e.errorInfo("repl", values[1], fmt.Sprintf("index %d out of bound %d", startIdx, len(seq.Value))))
+			return nil, false
+		}
+		endIdx := end.Value
+		if endIdx < 0 {
+			endIdx += len(seq.Value)
+		}
+		if endIdx < 0 || endIdx > len(seq.Value) {
+			fmt.Println(e.errorInfo("repl", values[1], fmt.Sprintf("index %d out of bound %d", startIdx, len(seq.Value))))
+			return nil, false
+		}
+		if startIdx > endIdx {
+			fmt.Println(e.errorInfo("repl", values[1], "start is greater than end"))
+			return nil, false
+		}
+		return expr.NewList(seq.Value[startIdx:endIdx]...), true
+	case expr.Vector:
+		startIdx := start.Value
+		if startIdx < 0 {
+			startIdx += len(seq.Value)
+		}
+		if startIdx < 0 || startIdx > len(seq.Value) {
+			fmt.Println(e.errorInfo("repl", values[1], fmt.Sprintf("index %d out of bound %d", startIdx, len(seq.Value))))
+			return nil, false
+		}
+		endIdx := end.Value
+		if endIdx < 0 {
+			endIdx += len(seq.Value)
+		}
+		if endIdx < 0 || endIdx > len(seq.Value) {
+			fmt.Println(e.errorInfo("repl", values[1], fmt.Sprintf("index %d out of bound %d", startIdx, len(seq.Value))))
+			return nil, false
+		}
+		if startIdx > endIdx {
+			fmt.Println(e.errorInfo("repl", values[1], "start is greater than end"))
+			return nil, false
+		}
+		return expr.NewVector(seq.Value[startIdx:endIdx]...), true
+
+	default:
+		fmt.Println(e.errorInfo("repl", values[3], "expect vector or list"))
+		return nil, false
+	}
+}
+
+func formalizeIndex(idx int, length int) (int, bool) {
+	index := idx
+	if idx < 0 {
+		index = idx + length
+	}
+	if index < 0 || index >= length {
+		return index, false
+	}
+	return index, true
 }
 
 func length(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
@@ -63,11 +148,8 @@ func dot(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 			fmt.Println(e.errorInfo("repl", values[2], "expect int"))
 			return nil, false
 		}
-		idx := v.Value
-		if idx < 0 {
-			idx += len(seq.Value)
-		}
-		if idx < 0 || idx >= len(seq.Value) {
+		idx, ok := formalizeIndex(v.Value, len(seq.Value))
+		if !ok {
 			fmt.Println(e.errorInfo("repl", values[1], fmt.Sprintf("index %d out of bound %d", idx, len(seq.Value))))
 			return nil, false
 		}
@@ -78,11 +160,8 @@ func dot(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 			fmt.Println(e.errorInfo("repl", values[1], "expect int"))
 			return nil, false
 		}
-		idx := v.Value
-		if idx < 0 {
-			idx += len(seq.Value)
-		}
-		if idx < 0 || idx >= len(seq.Value) {
+		idx, ok := formalizeIndex(v.Value, len(seq.Value))
+		if !ok {
 			fmt.Println(e.errorInfo("repl", values[1], fmt.Sprintf("index %d out of bound %d", idx, len(seq.Value))))
 			return nil, false
 		}
@@ -171,16 +250,23 @@ func _append(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need at least 2 argumtes"))
 		return nil, false
 	}
-	target, ok := values[1].(expr.List)
-	if !ok {
-		fmt.Println(e.errorInfo("repl", values[1], "type mismatch:", "expect a list"))
+	switch target := values[1].(type) {
+	case expr.List:
+		res := target.Value
+		for _, v := range values[2:] {
+			res = append(res, v)
+		}
+		return expr.NewList(res...), true
+	case expr.Vector:
+		res := target.Value
+		for _, v := range values[2:] {
+			res = append(res, v)
+		}
+		return expr.NewVector(res...), true
+	default:
+		fmt.Println(e.errorInfo("repl", values[1], "type mismatch:", "expect a list or vector"))
 		return nil, false
 	}
-	res := target.Value
-	for _, v := range values[2:] {
-		res = append(res, v)
-	}
-	return expr.NewList(res...), true
 }
 
 func equal(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
@@ -357,8 +443,11 @@ func minus(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 
 	switch values[1].(type) {
 	case expr.Int:
-		res := 0
-		for i := 1; i < len(values); i++ {
+		if len(values) == 1 {
+			return expr.NewInt(-values[1].(expr.Int).Value), true
+		}
+		res := values[1].(expr.Int).Value
+		for i := 2; i < len(values); i++ {
 			if v, ok := values[i].(expr.Int); ok {
 				res -= v.Value
 			} else {

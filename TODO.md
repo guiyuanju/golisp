@@ -5,6 +5,10 @@
 - [x] fix equal, greater, less...
 - [x] support macro definition, change `and` to a custom macro
 - [x] recursive macro
+- [ ] var args -> remove do in let
+- [ ] for loop
+- [ ] prepend
+- [ ] implement let using macro or builtin?
 - [ ] macro simplify support ,
 - [ ] tail call optimization
 - [ ] variable arity function, implement do with macro
@@ -16,6 +20,7 @@
 - [ ] reactive
 - [ ] go interop
 - [ ] compile to go
+- [ ] abstract list and vector to seq
 
 Features:
 - [x] primitives

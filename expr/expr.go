@@ -217,6 +217,17 @@ func (e List) Equal(other Expr) bool {
 	}
 	return false
 }
+func (e List) Len() int {
+	return len(e.Value)
+}
+func (e List) append(v Expr) List {
+	newList := append(e.Value, v)
+	return NewList(newList...)
+}
+func (e List) slice(start, end int) List {
+	newList := e.Value[start:end]
+	return NewList(newList...)
+}
 
 type Builtin struct {
 	Id   int

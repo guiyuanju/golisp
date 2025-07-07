@@ -265,7 +265,6 @@ func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 
 		operator, ok := evaluator.Eval(e.Value[0])
 		if !ok {
-			fmt.Println(evaluator.errorInfo("repl", e.Value[0], "failed to evaluate op in list"))
 			return nil, false
 		}
 
@@ -275,7 +274,6 @@ func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 			for _, arg := range e.Value[1:] {
 				value, ok := evaluator.Eval(arg)
 				if !ok {
-					fmt.Println(evaluator.errorInfo("repl", arg, "failed to evaluate argument"))
 					return nil, false
 				}
 				args = append(args, value)
@@ -297,7 +295,6 @@ func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 			for _, arg := range e.Value[1:] {
 				value, ok := evaluator.Eval(arg)
 				if !ok {
-					fmt.Println(evaluator.errorInfo("repl", arg, "failed to evaluate argument"))
 					return nil, false
 				}
 				args = append(args, value)
