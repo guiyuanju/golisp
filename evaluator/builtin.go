@@ -33,7 +33,12 @@ func NewBuiltins() Builtins {
 	res["time"] = _time
 	res["."] = dot
 	res["len"] = length
+	res["eval"] = eval
 	return res
+}
+
+func eval(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	return e.Eval(values[1])
 }
 
 type Seq interface {
