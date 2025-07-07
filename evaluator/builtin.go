@@ -24,7 +24,7 @@ func NewBuiltins() Builtins {
 	res["<"] = less
 	res["<="] = lessEqual
 	res[">="] = greaterEqual
-	res[":"] = _append
+	res["append"] = _append
 	res["list"] = list
 	res["not"] = not
 	res["type"] = _type

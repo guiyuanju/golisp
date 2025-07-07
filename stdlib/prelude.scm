@@ -7,12 +7,6 @@
 (macro pair [seq]
     (if (= 0 (len seq))
         nil
-        [(. -1 seq) (. 1 seq)]))
+        (: (pair ) [(. -2 seq) (. -1 seq)])))
 
-(macro let [args body]
-        )
-; (let [a b c d] ())
-; (fn []
-;     (var ))
-
-; ()
+(print (macroexpand '(pair [a 1 b 2])))
