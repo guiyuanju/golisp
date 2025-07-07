@@ -133,10 +133,9 @@ func (e Nil) Equal(other Expr) bool {
 }
 
 type Macro struct {
-	Id     int
-	Name   string
-	Params []string
-	Body   []Expr
+	Id      int
+	Name    string
+	Closure Closure
 }
 
 func (e Macro) ExprId() int {
@@ -278,10 +277,6 @@ func NewNil() Nil {
 	return Nil{getId()}
 }
 
-func NewMacro(name string, params []string, body []Expr) Macro {
-	return Macro{getId(), name, params, body}
-}
-
 func NewList(values ...Expr) List {
 	return List{getId(), values}
 }
@@ -296,6 +291,10 @@ func NewBuiltin(name string) Builtin {
 
 func NewClosure(env Env, params []string, body []Expr) Closure {
 	return Closure{getId(), env, params, body}
+}
+
+func NewMacro(name string, closure Closure) Macro {
+	return Macro{getId(), name, closure}
 }
 
 func NewEnv() Env {

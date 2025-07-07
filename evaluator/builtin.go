@@ -25,7 +25,25 @@ func NewBuiltins() Builtins {
 	res["list"] = list
 	res["not"] = not
 	res["type"] = _type
+	res["macroexpand"] = macroexpand
 	return res
+}
+
+func macroexpand(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
+	if len(values) < 2 {
+		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need 1 argumte"))
+		return nil, false
+	}
+	arg, ok := values[1].(expr.List)
+	if !ok {
+		fmt.Println(e.errorInfo("repl", values[1], "expext argument to be a quoted list"))
+		return nil, false
+	}
+	if !e.isMacro(arg.Value[0]) {
+		fmt.Println(e.errorInfo("repl", arg.Value[0], "not macro"))
+		return nil, false
+	}
+	return e.macroExpand(arg)
 }
 
 func _type(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {

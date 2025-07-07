@@ -9,28 +9,22 @@
 - [ ] hygine macro
 - [ ] use macro to implement '
 - [ ] variable arity function
+- [x] recursive macro
 
 Features:
 - [x] primitives
   - [x] int
   - [x] string
   - [x] symbol
+  - [x] bool, nil
 - [x] variable
   - [x] define
   - [x] update
 - [x] closure
-- [x] do block
-- [x] print
 - [ ] control flow
   - [x] if
-  - [x] bool, nil
-  - [ ] comparison
-    - [x] =
-    - [ ] >
-  - [ ] logical
-    - [ ] not = if x then false else true
-    - [ ] and = if a then b else false
-    - [ ] or = if a then true else b
+  - [x] comparison
+  - [x] logical
 - [x] quote
 - [x] macro
 - [ ] module / namespace

@@ -12,7 +12,6 @@ type Evaluator struct {
 	env       expr.Env
 	Positions parser.Positions
 	builtins  Builtins
-	macros    Macros
 }
 
 func New(positions parser.Positions) Evaluator {
@@ -21,7 +20,7 @@ func New(positions parser.Positions) Evaluator {
 	for name, _ := range builtins {
 		env.Add(name, expr.NewBuiltin(name))
 	}
-	return Evaluator{env, positions, builtins, NewMacros()}
+	return Evaluator{env, positions, builtins}
 }
 
 func (e Evaluator) errorInfo(file string, expr expr.Expr, info ...string) string {
@@ -182,12 +181,43 @@ func (evaluator Evaluator) evalSpecialForm(e expr.List) (expr.Expr, bool) {
 		}
 		body := e.Value[3:]
 		closure := expr.NewClosure(evaluator.env, params, body)
-		evaluator.macros.AddMacro(name.Value, closure)
+		macro := expr.NewMacro(name.Value, closure)
+		if !evaluator.env.Add(name.Value, macro) {
+			fmt.Println(evaluator.errorInfo("repl", name, "already defined"))
+			return nil, false
+		}
 		return expr.NewNil(), true
 
 	default:
 		panic("unrechable")
 	}
+}
+
+func (evaluator Evaluator) isMacro(e expr.Expr) bool {
+	symbol, ok := e.(expr.Symbol)
+	if !ok {
+		return false
+	}
+	value, ok := evaluator.env.Get(symbol.Value)
+	if !ok {
+		return false
+	}
+	_, ok = value.(expr.Macro)
+	return ok
+}
+
+func (evaluator Evaluator) macroExpand(e expr.List) (expr.Expr, bool) {
+	value, _ := evaluator.env.Get(e.Value[0].(expr.Symbol).Value)
+	macro := value.(expr.Macro)
+
+	args := e.Value[1:]
+
+	if len(e.Value)-1 != len(macro.Closure.Params) {
+		fmt.Println(evaluator.errorInfo("repl", macro, "expect", strconv.Itoa(len(macro.Closure.Params)), "arguments, got", strconv.Itoa(len(e.Value)-1)))
+		return nil, false
+	}
+
+	return apply(evaluator, macro.Closure, args)
 }
 
 func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
@@ -221,8 +251,8 @@ func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 			return e, true
 		}
 
-		if evaluator.macros.isMacro(e) {
-			expanded, ok := evaluator.macros.expand(evaluator, e)
+		if evaluator.isMacro(e.Value[0]) {
+			expanded, ok := evaluator.macroExpand(e)
 			if !ok {
 				return nil, false
 			}
