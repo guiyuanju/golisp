@@ -7,7 +7,7 @@
 (macro pair [seq]
     (if (= 0 (len seq))
         nil
-        [(. 0 seq) (. 1 seq)]))
+        [(. -1 seq) (. 1 seq)]))
 
 (macro let [args body]
         )

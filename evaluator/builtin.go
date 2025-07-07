@@ -56,9 +56,9 @@ func dot(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need 2 arguments"))
 		return nil, false
 	}
-	switch seq := values[1].(type) {
+	switch seq := values[2].(type) {
 	case expr.List:
-		v, ok := values[2].(expr.Int)
+		v, ok := values[1].(expr.Int)
 		if !ok {
 			fmt.Println(e.errorInfo("repl", values[2], "expect int"))
 			return nil, false
@@ -67,28 +67,28 @@ func dot(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 		if idx < 0 {
 			idx += len(seq.Value)
 		}
-		if idx <= 0 || idx >= len(seq.Value) {
-			fmt.Println(e.errorInfo("repl", values[2], fmt.Sprintf("index %d out of bound %d", idx, len(seq.Value))))
+		if idx < 0 || idx >= len(seq.Value) {
+			fmt.Println(e.errorInfo("repl", values[1], fmt.Sprintf("index %d out of bound %d", idx, len(seq.Value))))
 			return nil, false
 		}
 		return seq.Value[idx], true
 	case expr.Vector:
-		v, ok := values[2].(expr.Int)
+		v, ok := values[1].(expr.Int)
 		if !ok {
-			fmt.Println(e.errorInfo("repl", values[2], "expect int"))
+			fmt.Println(e.errorInfo("repl", values[1], "expect int"))
 			return nil, false
 		}
 		idx := v.Value
 		if idx < 0 {
 			idx += len(seq.Value)
 		}
-		if idx <= 0 || idx >= len(seq.Value) {
-			fmt.Println(e.errorInfo("repl", values[2], fmt.Sprintf("index %d out of bound %d", idx, len(seq.Value))))
+		if idx < 0 || idx >= len(seq.Value) {
+			fmt.Println(e.errorInfo("repl", values[1], fmt.Sprintf("index %d out of bound %d", idx, len(seq.Value))))
 			return nil, false
 		}
 		return seq.Value[idx], true
 	default:
-		fmt.Println(e.errorInfo("repl", values[1], "unsupported type for dot"))
+		fmt.Println(e.errorInfo("repl", values[2], "unsupported type for dot"))
 		return nil, false
 	}
 }
