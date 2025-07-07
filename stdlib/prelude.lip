@@ -3,7 +3,3 @@
 
 (macro or [a b]
     (list 'if a a b))
-
-(macro andor [a b] (list 'and a (list 'or b 3)))
-
-(print (macroexpand '(andor 1 2)))

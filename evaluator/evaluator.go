@@ -14,13 +14,13 @@ type Evaluator struct {
 	builtins  Builtins
 }
 
-func New(positions parser.Positions) Evaluator {
+func New() Evaluator {
 	env := expr.NewEnv()
 	builtins := NewBuiltins()
 	for name, _ := range builtins {
 		env.Add(name, expr.NewBuiltin(name))
 	}
-	return Evaluator{env, positions, builtins}
+	return Evaluator{env, parser.NewPositions(), builtins}
 }
 
 func (e Evaluator) errorInfo(file string, expr expr.Expr, info ...string) string {
@@ -342,7 +342,8 @@ func apply(e Evaluator, closure expr.Closure, args []expr.Expr) (expr.Expr, bool
 		env.Add(closure.Params[i], args[i])
 	}
 	newEnv := closure.Env.AppendEnv(env)
-	newEvaluator := New(e.Positions)
+	newEvaluator := New()
+	newEvaluator.Positions = e.Positions
 	newEvaluator.env = newEnv
 
 	var last expr.Expr

@@ -26,6 +26,7 @@ type Expr interface {
 	ExprId() int
 	ExprName() string
 	Equal(Expr) bool
+	String() string
 }
 
 type Int struct {
