@@ -56,6 +56,9 @@ func (p *Parser) expr() (expr.Expr, bool) {
 	case FALSE:
 		p.advance()
 		return p.withPosOfToken(expr.NewBool(false), cur), true
+	case NIL:
+		p.advance()
+		return p.withPosOfToken(expr.NewNil(), cur), true
 	case SYMBOL:
 		p.advance()
 		return p.withPosOfToken(expr.NewSymbol(cur.Value.(string)), cur), true
@@ -144,14 +147,14 @@ func errorInfo(token Token, info string) string {
 	return fmt.Sprintf("repl:%d:%d: %s", token.Line, token.Column, info)
 }
 
-func (p *Parser) Parse() (expr.Expr, bool) {
-	var last expr.Expr
+func (p *Parser) Parse() ([]expr.Expr, bool) {
+	var res []expr.Expr
 	for !p.isEnd() {
-		res, ok := p.expr()
+		e, ok := p.expr()
 		if !ok {
-			return last, ok
+			return nil, false
 		}
-		last = res
+		res = append(res, e)
 	}
-	return last, true
+	return res, true
 }

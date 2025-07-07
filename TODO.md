@@ -4,6 +4,11 @@
 - [x] String() for Expr, pretty printing
 - [ ] move do... to std lib
 - [ ] stdlib implement
+- [x] fix equal, greater, less...
+- [ ] support macro definition, change `and` to a custom macro
+- [ ] hygine macro
+- [ ] use macro to implement '
+- [ ] variable arity function
 
 Features:
 - [x] primitives
@@ -26,8 +31,9 @@ Features:
     - [ ] not = if x then false else true
     - [ ] and = if a then b else false
     - [ ] or = if a then true else b
-- [ ] quote
-- [ ] macro
+- [x] quote
+- [x] macro
+- [ ] module / namespace
 
 keword:
 - if

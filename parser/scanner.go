@@ -145,7 +145,6 @@ func (s *Scanner) Scan() ([]Token, bool) {
 	return res, true
 }
 
-// alphabet, -, number
 func (s *Scanner) symbol() string {
 	var res []byte
 	for !s.isEnd() && !slices.Contains(DELIMETER, s.cur()) {

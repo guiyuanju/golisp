@@ -12,6 +12,7 @@ type Evaluator struct {
 	env       expr.Env
 	Positions parser.Positions
 	builtins  Builtins
+	macros    Macros
 }
 
 func New(positions parser.Positions) Evaluator {
@@ -20,7 +21,7 @@ func New(positions parser.Positions) Evaluator {
 	for name, _ := range builtins {
 		env.Add(name, expr.NewBuiltin(name))
 	}
-	return Evaluator{env, positions, builtins}
+	return Evaluator{env, positions, builtins, NewMacros()}
 }
 
 func (e Evaluator) errorInfo(file string, expr expr.Expr, info ...string) string {
@@ -151,12 +152,38 @@ func (evaluator Evaluator) evalSpecialForm(e expr.List) (expr.Expr, bool) {
 			newVar := expr.NewList(expr.NewSymbol(expr.SF_VAR), expr.NewSymbol(name), expr.NewList(newFn...))
 			return evaluator.Eval(newVar)
 		default:
-			fmt.Println(evaluator.errorInfo("repl", e, "expect a symbol or an argument list"))
+			fmt.Println(evaluator.errorInfo("repl", e.Value[1], "expect a symbol or an argument list"))
 			return nil, false
 		}
 
 	case expr.SF_MACRO:
-		return nil, false
+		if len(e.Value) < 3 {
+			fmt.Println(evaluator.errorInfo("repl", e, "expect a symbol and a argument list"))
+			return nil, false
+		}
+		name, ok := e.Value[1].(expr.Symbol)
+		if !ok {
+			fmt.Println(evaluator.errorInfo("repl", e.Value[1], "expect a symbol"))
+			return nil, false
+		}
+		args, ok := e.Value[2].(expr.Vector)
+		if !ok {
+			fmt.Println(evaluator.errorInfo("repl", e.Value[2], "expect a argument list"))
+			return nil, false
+		}
+		params := []string{}
+		for _, v := range args.Value {
+			p, ok := v.(expr.Symbol)
+			if !ok {
+				fmt.Println(evaluator.errorInfo("repl", v, "expect a symbol"))
+				return nil, false
+			}
+			params = append(params, p.Value)
+		}
+		body := e.Value[3:]
+		closure := expr.NewClosure(evaluator.env, params, body)
+		evaluator.macros.AddMacro(name.Value, closure)
+		return expr.NewNil(), true
 
 	default:
 		panic("unrechable")
@@ -178,58 +205,6 @@ func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 	case expr.Nil:
 		return e, true
 
-	// case expr.Quote:
-	// 	return e.Value, true
-
-	// case expr.Def:
-	// 	value, ok := evaluator.Eval(e.Value)
-	// 	if !ok {
-	// 		fmt.Println(evaluator.errorInfo("repl", e.Value, "failed to evaluate value of def"))
-	// 		return nil, false
-	// 	}
-	// 	if !evaluator.env.Add(e.Name, value) {
-	// 		fmt.Println(evaluator.errorInfo("repl", e, "already defined:", e.Name))
-	// 		return nil, false
-	// 	}
-	// 	return nil, true
-
-	// case expr.Set:
-	// 	value, ok := evaluator.Eval(e.Value)
-	// 	if !ok {
-	// 		fmt.Println(evaluator.errorInfo("repl", e.Value, "failed to evaluate value of set"))
-	// 		return nil, false
-	// 	}
-	// 	if !evaluator.env.Set(e.Name, value) {
-	// 		fmt.Println(evaluator.errorInfo("repl", e, "undefined:", e.Name))
-	// 		return nil, false
-	// 	}
-	// 	return nil, true
-
-	// case expr.If:
-	// 	pred, ok := evaluator.Eval(e.Pred)
-	// 	if !ok {
-	// 		fmt.Println(evaluator.errorInfo("repl", e.Pred, "failed to evaluate if pred"))
-	// 		return nil, false
-	// 	}
-	// 	if isTruthy(pred) {
-	// 		return evaluator.Eval(e.Then)
-	// 	} else {
-	// 		return evaluator.Eval(e.Else)
-	// 	}
-
-	// case expr.Closure:
-	// 	e.Env = evaluator.env
-	// 	// check param name duplication
-	// 	exist := map[string]bool{}
-	// 	for _, param := range e.Params {
-	// 		if exist[param] {
-	// 			fmt.Println(evaluator.errorInfo("repl", e, "parameter name must be unique"))
-	// 			return nil, false
-	// 		}
-	// 		exist[param] = true
-	// 	}
-	// 	return e, true
-
 	case expr.Vector:
 		var res []expr.Expr
 		for _, v := range e.Value {
@@ -244,6 +219,14 @@ func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 	case expr.List:
 		if len(e.Value) == 0 {
 			return e, true
+		}
+
+		if evaluator.macros.isMacro(e) {
+			expanded, ok := evaluator.macros.expand(evaluator, e)
+			if !ok {
+				return nil, false
+			}
+			return evaluator.Eval(expanded)
 		}
 
 		if isSpecialForm(e) {
@@ -290,23 +273,7 @@ func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 				args = append(args, value)
 			}
 
-			env := expr.NewEnv()
-			for i := range operator.Params {
-				env.Add(operator.Params[i], args[i])
-			}
-			newEnv := operator.Env.AppendEnv(env)
-			newEvaluator := New(evaluator.Positions)
-			newEvaluator.env = newEnv
-
-			var last expr.Expr
-			for _, b := range operator.Body {
-				v, ok := newEvaluator.Eval(b)
-				if !ok {
-					return nil, false
-				}
-				last = v
-			}
-			return last, true
+			return apply(evaluator, operator, args)
 		}
 
 		fmt.Println(evaluator.errorInfo("repl", e.Value[0], "expect proc or function"))
@@ -314,6 +281,49 @@ func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 	}
 
 	panic("unexhaustive evaluation")
+}
+
+func (e Evaluator) EvalString(code string) (expr.Expr, bool) {
+	s := parser.NewScanner(code)
+	tokens, ok := s.Scan()
+	if !ok {
+		return nil, false
+	}
+	p := parser.New(tokens)
+	exprs, ok := p.Parse()
+	if !ok {
+		return nil, false
+	}
+	e.Positions = p.Positions
+	var last expr.Expr
+	for _, expr := range exprs {
+		v, ok := e.Eval(expr)
+		if !ok {
+			return nil, false
+		}
+		last = v
+	}
+	return last, true
+}
+
+func apply(e Evaluator, closure expr.Closure, args []expr.Expr) (expr.Expr, bool) {
+	env := expr.NewEnv()
+	for i := range closure.Params {
+		env.Add(closure.Params[i], args[i])
+	}
+	newEnv := closure.Env.AppendEnv(env)
+	newEvaluator := New(e.Positions)
+	newEvaluator.env = newEnv
+
+	var last expr.Expr
+	for _, b := range closure.Body {
+		v, ok := newEvaluator.Eval(b)
+		if !ok {
+			return nil, false
+		}
+		last = v
+	}
+	return last, true
 }
 
 func isTruthy(e expr.Expr) bool {

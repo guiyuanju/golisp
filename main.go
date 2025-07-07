@@ -5,42 +5,22 @@ import (
 	"fmt"
 	"golisp/evaluator"
 	"golisp/parser"
+	"log"
 	"os"
 )
 
 func main() {
-	repl()
+	prelude, err := os.ReadFile("./stdlib/prelude.lip")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	e := evaluator.New(nil)
+	e.EvalString(string(prelude))
+	repl(e)
 }
 
-// func repl() {
-// 	exprs := []expr.Expr{
-// 		expr.NewDef("count", expr.NewInt(0)),
-// 		expr.NewDef("plus-two", expr.NewClosure(nil, []string{"x"},
-// 			[]expr.Expr{
-// 				expr.NewSet("count", expr.NewList(expr.NewSymbol("+"), expr.NewSymbol("count"), expr.NewInt(1))),
-// 				expr.NewList(expr.NewSymbol("+"), expr.NewSymbol("x"), expr.NewInt(2)),
-// 			},
-// 		)),
-// 		expr.NewIf(nil,
-// 			expr.NewList(expr.NewSymbol("plus-two"), expr.NewInt(200)),
-// 			expr.NewList(expr.NewSymbol("plus-two"), expr.NewInt(400)),
-// 		),
-// 		expr.NewList(expr.NewSymbol("print"), expr.NewSymbol("count")),
-// 	}
-
-// 	e := evaluator.New(parser.NewPositions())
-// 	for _, expr := range exprs {
-// 		v, ok := e.Eval(expr)
-// 		if !ok {
-// 			break
-// 		}
-// 		fmt.Println(v)
-// 	}
-
-// }
-
-func repl() {
-	e := evaluator.New(nil)
+func repl(e evaluator.Evaluator) {
 	scanner := bufio.NewScanner(os.Stdin)
 	hasInput := true
 	for hasInput {
@@ -62,10 +42,12 @@ func repl() {
 		}
 
 		e.Positions = p.Positions
-		res, ok := e.Eval(exprs)
-		if !ok {
-			continue
+		for _, expr := range exprs {
+			res, ok := e.Eval(expr)
+			if !ok {
+				continue
+			}
+			fmt.Println(res)
 		}
-		fmt.Println(res)
 	}
 }
