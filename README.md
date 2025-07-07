@@ -30,6 +30,12 @@
 ; => 8397 miliseconds
 ```
 
+## Quick Start
+
+1. `git clone https://github.com/guiyuanju/golisp.git && cd golisp`
+2. `go build`
+3. `./golisp` for REPL or `./golisp filename` for file
+
 Features:
 - [x] primitives
   - [x] bool
