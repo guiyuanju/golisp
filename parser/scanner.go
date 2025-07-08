@@ -10,8 +10,6 @@ type TokenType int
 const (
 	LEFT_PAREN TokenType = iota
 	RIGHT_PAREN
-	LEFT_BRACKET
-	RIGHT_BRACKET
 	INTEGER
 	STRING
 	TRUE
@@ -21,7 +19,7 @@ const (
 	QUOTE
 )
 
-var DELIMETER []byte = []byte{'(', ')', '{', '}', '[', ']', ' ', '\n', '"'}
+var DELIMETER []byte = []byte{'(', ')', '{', '}', ' ', '\n', '"'}
 
 type Token struct {
 	TokenType TokenType
@@ -114,12 +112,6 @@ func (s *Scanner) Scan() ([]Token, bool) {
 			s.advance()
 		case ')':
 			res = append(res, s.newToken(RIGHT_PAREN, nil))
-			s.advance()
-		case '[':
-			res = append(res, s.newToken(LEFT_BRACKET, nil))
-			s.advance()
-		case ']':
-			res = append(res, s.newToken(RIGHT_BRACKET, nil))
 			s.advance()
 		case '\'':
 			res = append(res, s.newToken(QUOTE, nil))

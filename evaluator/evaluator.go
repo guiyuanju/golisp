@@ -36,7 +36,7 @@ func isSpecialForm(e expr.List) bool {
 		return false
 	}
 	switch s.Value {
-	case expr.SF_QUOTE, expr.SF_VAR, expr.SF_SET, expr.SF_IF, expr.SF_FN, expr.SF_MACRO:
+	case expr.SF_QUOTE, expr.SF_VAR, expr.SF_SET, expr.SF_IF, expr.SF_FN, expr.SF_MACRO, expr.SF_APPLY:
 		return true
 	default:
 		return false
@@ -111,22 +111,41 @@ func (evaluator Evaluator) evalSpecialForm(e expr.List) (expr.Expr, bool) {
 		return evaluator.Eval(e.Value[3])
 
 	case expr.SF_FN:
-		if len(e.Value) < 2 {
-			fmt.Println(evaluator.errorInfo("repl", s, "expect an argument list"))
+		if len(e.Value) < 3 {
+			fmt.Println(evaluator.errorInfo("repl", s, "expect an argument list and a body"))
 			return nil, false
 		}
 		switch first := e.Value[1].(type) {
-		case expr.Vector:
+		case expr.List:
 			params := []string{}
 			body := []expr.Expr{}
-			for _, v := range first.Value {
-				p, ok := v.(expr.Symbol)
+			var i int
+			for ; i < len(first.Value); i++ {
+				p, ok := first.Value[i].(expr.Symbol)
 				if !ok {
 					fmt.Println(evaluator.errorInfo("repl", p, "expect a symbol"))
 					return nil, false
 				}
+				if p.Value == "&" {
+					break
+				}
 				params = append(params, p.Value)
 			}
+			// varparam
+			var varparam string
+			if i < len(first.Value) {
+				if i == len(first.Value)-1 {
+					fmt.Println(evaluator.errorInfo("repl", first.Value[i], "expect a symbol after &"))
+					return nil, false
+				}
+				v, ok := first.Value[i+1].(expr.Symbol)
+				if !ok {
+					fmt.Println(evaluator.errorInfo("repl", first.Value[i+1], "expect a symbol"))
+					return nil, false
+				}
+				varparam = v.Value
+			}
+
 			body = e.Value[2:]
 			// check param name duplication
 			exist := map[string]bool{}
@@ -137,12 +156,13 @@ func (evaluator Evaluator) evalSpecialForm(e expr.List) (expr.Expr, bool) {
 				}
 				exist[param] = true
 			}
-			closure := expr.NewClosure(evaluator.env, params, body)
+
+			closure := expr.NewClosure(evaluator.env, params, varparam, body)
 			return closure, true
 		case expr.Symbol:
 			name := first.Value
-			if len(e.Value) < 3 {
-				fmt.Println(evaluator.errorInfo("repl", s, "expect an argument list"))
+			if len(e.Value) < 4 {
+				fmt.Println(evaluator.errorInfo("repl", s, "expect an argument list and body"))
 				return nil, false
 			}
 			// redispatch to (var (fn [...] ...))
@@ -156,8 +176,8 @@ func (evaluator Evaluator) evalSpecialForm(e expr.List) (expr.Expr, bool) {
 		}
 
 	case expr.SF_MACRO:
-		if len(e.Value) < 3 {
-			fmt.Println(evaluator.errorInfo("repl", e, "expect a symbol and a argument list"))
+		if len(e.Value) < 4 {
+			fmt.Println(evaluator.errorInfo("repl", e, "expect a symbol, a argument list and body"))
 			return nil, false
 		}
 		name, ok := e.Value[1].(expr.Symbol)
@@ -165,28 +185,70 @@ func (evaluator Evaluator) evalSpecialForm(e expr.List) (expr.Expr, bool) {
 			fmt.Println(evaluator.errorInfo("repl", e.Value[1], "expect a symbol"))
 			return nil, false
 		}
-		args, ok := e.Value[2].(expr.Vector)
+		args, ok := e.Value[2].(expr.List)
 		if !ok {
 			fmt.Println(evaluator.errorInfo("repl", e.Value[2], "expect a argument list"))
 			return nil, false
 		}
 		params := []string{}
-		for _, v := range args.Value {
-			p, ok := v.(expr.Symbol)
+		var i int
+		for ; i < len(args.Value); i++ {
+			p, ok := args.Value[i].(expr.Symbol)
+			if !ok {
+				fmt.Println(evaluator.errorInfo("repl", args.Value[i], "expect a symbol"))
+				return nil, false
+			}
+			if p.Value == "&" {
+				break
+			}
+			params = append(params, p.Value)
+		}
+		var varparam string
+		if i < len(args.Value) {
+			if i == len(args.Value)-1 {
+				fmt.Println(evaluator.errorInfo("repl", args.Value[i], "expect a symbol after &"))
+				return nil, false
+			}
+			v, ok := args.Value[i+1].(expr.Symbol)
 			if !ok {
 				fmt.Println(evaluator.errorInfo("repl", v, "expect a symbol"))
 				return nil, false
 			}
-			params = append(params, p.Value)
+			varparam = v.Value
 		}
 		body := e.Value[3:]
-		closure := expr.NewClosure(evaluator.env, params, body)
+		closure := expr.NewClosure(evaluator.env, params, varparam, body)
 		macro := expr.NewMacro(name.Value, closure)
 		if !evaluator.env.Add(name.Value, macro) {
 			fmt.Println(evaluator.errorInfo("repl", name, "already defined"))
 			return nil, false
 		}
 		return expr.NewNil(), true
+
+	case expr.SF_APPLY:
+		if len(e.Value)-1 < 2 {
+			fmt.Println(evaluator.errorInfo("repl", e.Value[0], "need at least 2 arguments"))
+			return nil, false
+		}
+		rest, ok := evaluator.Eval(e.Value[2])
+		if !ok {
+			return nil, false
+		}
+		restList, ok := rest.(expr.List)
+		if !ok {
+			fmt.Println(evaluator.errorInfo("repl", e.Value[2], "expect a list"))
+			return nil, false
+		}
+		switch f := e.Value[1].(type) {
+		case expr.List:
+			f.Append(restList)
+			f.Value = append(f.Value, restList.Value...)
+			return evaluator.Eval(f)
+		default:
+			v := []expr.Expr{f}
+			v = append(v, restList.Value...)
+			return evaluator.Eval(expr.NewList(v...))
+		}
 
 	default:
 		panic("unrechable")
@@ -212,8 +274,8 @@ func (evaluator Evaluator) macroExpand(e expr.List) (expr.Expr, bool) {
 
 	args := e.Value[1:]
 
-	if len(e.Value)-1 != len(macro.Closure.Params) {
-		fmt.Println(evaluator.errorInfo("repl", macro, "expect", strconv.Itoa(len(macro.Closure.Params)), "arguments, got", strconv.Itoa(len(e.Value)-1)))
+	if len(e.Value)-1 < len(macro.Closure.Params) {
+		fmt.Println(evaluator.errorInfo("repl", macro, "expect at least", strconv.Itoa(len(macro.Closure.Params)), "arguments, got", strconv.Itoa(len(e.Value)-1)))
 		return nil, false
 	}
 
@@ -234,17 +296,6 @@ func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 
 	case expr.Nil:
 		return e, true
-
-	case expr.Vector:
-		var res []expr.Expr
-		for _, v := range e.Value {
-			value, ok := evaluator.Eval(v)
-			if !ok {
-				return nil, false
-			}
-			res = append(res, value)
-		}
-		return expr.NewVector(res...), true
 
 	case expr.List:
 		if len(e.Value) == 0 {
@@ -286,8 +337,8 @@ func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 
 		// invoke a closure
 		case expr.Closure:
-			if len(e.Value)-1 != len(operator.Params) {
-				fmt.Println(evaluator.errorInfo("repl", operator, "expect", strconv.Itoa(len(operator.Params)), "arguments, got", strconv.Itoa(len(e.Value)-1)))
+			if len(e.Value)-1 < len(operator.Params) {
+				fmt.Println(evaluator.errorInfo("repl", operator, "expect at least", strconv.Itoa(len(operator.Params)), "arguments, got", strconv.Itoa(len(e.Value)-1)))
 				return nil, false
 			}
 
@@ -335,9 +386,12 @@ func (e Evaluator) EvalString(code string) (expr.Expr, bool) {
 
 func apply(e Evaluator, closure expr.Closure, args []expr.Expr) (expr.Expr, bool) {
 	env := expr.NewEnv()
-	for i := range closure.Params {
+	var i int
+	for ; i < len(closure.Params); i++ {
 		env.Add(closure.Params[i], args[i])
 	}
+	env.Add(closure.VarParam, expr.NewList(args[i:]...))
+
 	newEnv := closure.Env.AppendEnv(env)
 	newEvaluator := New()
 	newEvaluator.Positions = e.Positions

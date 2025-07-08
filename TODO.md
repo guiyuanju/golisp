@@ -5,6 +5,7 @@
 - [x] fix equal, greater, less...
 - [x] support macro definition, change `and` to a custom macro
 - [x] recursive macro
+- [ ] all strcuture compiles to goroutine, a trully reactive concurrent language
 - [ ] var args -> remove do in let
 - [ ] for loop
 - [ ] prepend

@@ -41,12 +41,6 @@ func eval(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	return e.Eval(values[1])
 }
 
-type Seq interface {
-	Len() int
-	append(v expr.Expr) expr.List
-	slice(start, end int)
-}
-
 func slice(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	if len(values) < 4 {
 		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need 3 arguments"))
@@ -85,28 +79,6 @@ func slice(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 			return nil, false
 		}
 		return expr.NewList(seq.Value[startIdx:endIdx]...), true
-	case expr.Vector:
-		startIdx := start.Value
-		if startIdx < 0 {
-			startIdx += len(seq.Value)
-		}
-		if startIdx < 0 || startIdx > len(seq.Value) {
-			fmt.Println(e.errorInfo("repl", values[1], fmt.Sprintf("index %d out of bound %d", startIdx, len(seq.Value))))
-			return nil, false
-		}
-		endIdx := end.Value
-		if endIdx < 0 {
-			endIdx += len(seq.Value)
-		}
-		if endIdx < 0 || endIdx > len(seq.Value) {
-			fmt.Println(e.errorInfo("repl", values[1], fmt.Sprintf("index %d out of bound %d", startIdx, len(seq.Value))))
-			return nil, false
-		}
-		if startIdx > endIdx {
-			fmt.Println(e.errorInfo("repl", values[1], "start is greater than end"))
-			return nil, false
-		}
-		return expr.NewVector(seq.Value[startIdx:endIdx]...), true
 
 	default:
 		fmt.Println(e.errorInfo("repl", values[3], "expect vector or list"))
@@ -133,8 +105,6 @@ func length(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	switch seq := values[1].(type) {
 	case expr.List:
 		return expr.NewInt(len(seq.Value)), true
-	case expr.Vector:
-		return expr.NewInt(len(seq.Value)), true
 	default:
 		fmt.Println(e.errorInfo("repl", values[1], "unsupported type for len"))
 		return nil, false
@@ -151,18 +121,6 @@ func dot(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 		v, ok := values[1].(expr.Int)
 		if !ok {
 			fmt.Println(e.errorInfo("repl", values[2], "expect int"))
-			return nil, false
-		}
-		idx, ok := formalizeIndex(v.Value, len(seq.Value))
-		if !ok {
-			fmt.Println(e.errorInfo("repl", values[1], fmt.Sprintf("index %d out of bound %d", idx, len(seq.Value))))
-			return nil, false
-		}
-		return seq.Value[idx], true
-	case expr.Vector:
-		v, ok := values[1].(expr.Int)
-		if !ok {
-			fmt.Println(e.errorInfo("repl", values[1], "expect int"))
 			return nil, false
 		}
 		idx, ok := formalizeIndex(v.Value, len(seq.Value))
@@ -262,12 +220,6 @@ func _append(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 			res = append(res, v)
 		}
 		return expr.NewList(res...), true
-	case expr.Vector:
-		res := target.Value
-		for _, v := range values[2:] {
-			res = append(res, v)
-		}
-		return expr.NewVector(res...), true
 	default:
 		fmt.Println(e.errorInfo("repl", values[1], "type mismatch:", "expect a list or vector"))
 		return nil, false

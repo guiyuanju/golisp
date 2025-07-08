@@ -12,6 +12,7 @@ const (
 	SF_IF    = "if"
 	SF_FN    = "fn"
 	SF_MACRO = "macro"
+	SF_APPLY = "apply"
 )
 
 var id int
@@ -152,39 +153,6 @@ func (e Macro) Equal(other Expr) bool {
 	return e.ExprId() == other.ExprId()
 }
 
-type Vector struct {
-	Id    int
-	Value []Expr
-}
-
-func (e Vector) ExprId() int {
-	return e.Id
-}
-func (e Vector) ExprName() string {
-	return "vector"
-}
-func (e Vector) String() string {
-	var res []string
-	for _, v := range e.Value {
-		res = append(res, fmt.Sprint(v))
-	}
-	return "[" + strings.Join(res, " ") + "]"
-}
-func (e Vector) Equal(other Expr) bool {
-	if o, ok := other.(Vector); ok {
-		if len(e.Value) != len(o.Value) {
-			return false
-		}
-		for i := range e.Value {
-			if !e.Value[i].Equal(o.Value[i]) {
-				return false
-			}
-		}
-		return true
-	}
-	return false
-}
-
 type List struct {
 	Id    int
 	Value []Expr
@@ -220,13 +188,21 @@ func (e List) Equal(other Expr) bool {
 func (e List) Len() int {
 	return len(e.Value)
 }
-func (e List) append(v Expr) List {
-	newList := append(e.Value, v)
+func (e List) Append(v ...Expr) Expr {
+	newList := append(e.Value, v...)
 	return NewList(newList...)
 }
-func (e List) slice(start, end int) List {
+func (e List) Prepend(v Expr) Expr {
+	newList := []Expr{v}
+	newList = append(newList, e.Value...)
+	return NewList(newList...)
+}
+func (e List) Slice(start, end int) Expr {
 	newList := e.Value[start:end]
 	return NewList(newList...)
+}
+func (e List) Get(i int) Expr {
+	return e.Value[i]
 }
 
 type Builtin struct {
@@ -248,10 +224,11 @@ func (e Builtin) Equal(other Expr) bool {
 }
 
 type Closure struct {
-	Id     int
-	Env    Env
-	Params []string
-	Body   []Expr
+	Id       int
+	Env      Env
+	Params   []string
+	VarParam string
+	Body     []Expr
 }
 
 func (e Closure) ExprId() int {
@@ -293,16 +270,12 @@ func NewList(values ...Expr) List {
 	return List{getId(), values}
 }
 
-func NewVector(values ...Expr) Vector {
-	return Vector{getId(), values}
-}
-
 func NewBuiltin(name string) Builtin {
 	return Builtin{getId(), name}
 }
 
-func NewClosure(env Env, params []string, body []Expr) Closure {
-	return Closure{getId(), env, params, body}
+func NewClosure(env Env, params []string, varparam string, body []Expr) Closure {
+	return Closure{getId(), env, params, varparam, body}
 }
 
 func NewMacro(name string, closure Closure) Macro {

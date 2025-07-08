@@ -69,16 +69,6 @@ func (p *Parser) expr() (expr.Expr, bool) {
 			return nil, false
 		}
 		return expr.NewList(expr.NewSymbol(expr.SF_QUOTE), v), true
-	case LEFT_BRACKET:
-		res, ok := p.vector()
-		if !ok {
-			return nil, false
-		}
-		_, ok = p.consume(RIGHT_BRACKET)
-		if !ok {
-			return nil, false
-		}
-		return res, true
 	case LEFT_PAREN:
 		res, ok := p.list()
 		if !ok {
@@ -106,20 +96,6 @@ func (p *Parser) list() (expr.Expr, bool) {
 		res = append(res, expr)
 	}
 	return p.withPosOfToken(expr.NewList(res...), cur), true
-}
-
-func (p *Parser) vector() (expr.Expr, bool) {
-	p.advance()
-	cur := p.cur()
-	var res []expr.Expr
-	for !p.isEnd() && p.cur().TokenType != RIGHT_BRACKET {
-		expr, ok := p.expr()
-		if !ok {
-			return nil, false
-		}
-		res = append(res, expr)
-	}
-	return p.withPosOfToken(expr.NewVector(res...), cur), true
 }
 
 func (p *Parser) consume(tokenType TokenType) (Token, bool) {
