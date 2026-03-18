@@ -3,13 +3,13 @@ package evaluator
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/guiyuanju/golisp/expr"
 	"github.com/guiyuanju/golisp/parser"
+	"github.com/guiyuanju/golisp/stdlib"
 )
 
 type Evaluator struct {
@@ -425,12 +425,8 @@ func isTruthy(e expr.Expr) bool {
 }
 
 func WithPrelude() Evaluator {
-	prelude, err := os.ReadFile("./stdlib/prelude.scm")
-	if err != nil {
-		log.Fatal(err)
-	}
 	e := New()
-	_, ok := e.EvalString(string(prelude))
+	_, ok := e.EvalString(stdlib.Prelude)
 	if !ok {
 		os.Exit(1)
 	}
