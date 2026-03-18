@@ -1,4 +1,6 @@
-# GoLisp <img src="./resources/logo.png" alt="Description of image" width="100">
+# GoLisp
+
+<img src="./resources/logo.png" alt="Description of image" width="100">
 
 GoLisp is an embedded Lisp in Go, bringing Lisp's powerful macro to Go, provoding a dynamic and extensible execution layer. Being embedded means you can easily provide existing Go function to GoLisp by defining and register builtin functions. Typical usage: rule engine, game logic, workflow script, plugin and extension system.
 
