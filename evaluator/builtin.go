@@ -14,8 +14,25 @@ type Builtins map[string]Proc
 
 var RegisteredBuiltins Builtins = Builtins{}
 
-func RegisterBuiltin(name string, proc Proc) {
+func registerBuiltin(name string, proc Proc) {
 	RegisteredBuiltins[name] = proc
+}
+
+func RegisterBuiltin(name string, f func(...any) (any, error)) {
+	var proc Proc
+	proc = func(e Evaluator, params ...expr.Expr) (expr.Expr, bool) {
+		args := []any{}
+		for i := 1; i < len(params); i++ {
+			args = append(args, expr.GVal(params[i]))
+		}
+		res, err := f(args...)
+		if err != nil {
+			fmt.Println(e.errorInfo("repl", expr.NewBuiltin(name), err.Error()))
+			return nil, false
+		}
+		return expr.LVal(res), true
+	}
+	registerBuiltin(name, proc)
 }
 
 func RegisterDefaultBuiltins() {
