@@ -2,8 +2,6 @@ package evaluator
 
 import (
 	"fmt"
-	"golisp/expr"
-	"golisp/parser"
 	"strconv"
 	"strings"
 
@@ -27,7 +25,7 @@ func New() Evaluator {
 }
 
 func (e Evaluator) errorInfo(file string, expr expr.Expr, info ...string) string {
-	return fmt.Sprintf("%s:%d:%d: (%s) %s", file, e.Positions[expr.ExprId()].Line, e.Positions[expr.ExprId()].Column, fmt.Sprintf("%T", expr), strings.Join(info, " "))
+	return fmt.Sprintf("%s:%d:%d: %v (%s) %s", file, e.Positions[expr.ExprId()].Line, e.Positions[expr.ExprId()].Column, expr, fmt.Sprintf("%T", expr), strings.Join(info, " "))
 }
 
 func isSpecialForm(e expr.List) bool {
@@ -341,6 +339,7 @@ func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 		// invoke a closure
 		case expr.Closure:
 			if len(e.Value)-1 < len(operator.Params) {
+				fmt.Println(e, operator)
 				fmt.Println(evaluator.errorInfo("repl", operator, "expect at least", strconv.Itoa(len(operator.Params)), "arguments, got", strconv.Itoa(len(e.Value)-1)))
 				return nil, false
 			}

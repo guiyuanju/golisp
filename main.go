@@ -3,8 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"golisp/evaluator"
-	"golisp/parser"
 	"log"
 	"os"
 
@@ -12,16 +10,44 @@ import (
 	"github.com/guiyuanju/golisp/parser"
 )
 
-func main() {
-	prelude, err := os.ReadFile("./stdlib/prelude.scm")
-	if err != nil {
-		log.Fatal(err)
-	}
-	e := evaluator.New()
-	_, ok := e.EvalString(string(prelude))
+func example() {
+	program := `
+; function definition
+(fn fib (x)
+    (if (< x 2)
+        x
+        (+ (fib (- x 1))
+           (fib (- x 2)))))
+
+; macro definition
+(macro timeit (forms)
+    (list 'let '(start (time))
+        (list 'do
+            forms
+            '(nano->milisec (- (time) start)))))
+
+(var form '(timeit (fib 30)))
+
+(print (macroexpand form))
+
+(print (macroexpand (macroexpand form)))
+
+(print (eval form) "miliseconds")
+	`
+
+	e := withPrelude()
+	res, ok := e.EvalString(program)
 	if !ok {
-		os.Exit(1)
+		return
 	}
+	fmt.Println("result =", res)
+}
+
+func main() {
+	example()
+	return
+
+	e := withPrelude()
 
 	args := os.Args[1:]
 	if len(args) == 0 {
@@ -34,7 +60,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, ok = e.EvalString(string(code))
+	_, ok := e.EvalString(string(code))
 	if !ok {
 		os.Exit(1)
 	}

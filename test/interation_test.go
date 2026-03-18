@@ -1,8 +1,9 @@
 package test
 
 import (
-	"golisp/evaluator"
 	"testing"
+
+	"github.com/guiyuanju/golisp/evaluator"
 )
 
 type testCase struct {

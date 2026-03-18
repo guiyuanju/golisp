@@ -2,7 +2,8 @@ package parser
 
 import (
 	"fmt"
-	"golisp/expr"
+
+	"github.com/guiyuanju/golisp/expr"
 )
 
 type Parser struct {
