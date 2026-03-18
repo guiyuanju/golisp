@@ -7,6 +7,9 @@ import (
 	"golisp/parser"
 	"log"
 	"os"
+
+	"github.com/guiyuanju/golisp/evaluator"
+	"github.com/guiyuanju/golisp/parser"
 )
 
 func main() {
