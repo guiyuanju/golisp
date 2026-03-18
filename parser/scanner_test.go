@@ -10,6 +10,12 @@ func TestScanNumber(t *testing.T) {
 	if !ok || ts[0].Value.(float64) != 123.0 {
 		t.Error("expect 123, got", ts[0].Value)
 	}
+
+	s = NewScanner("10.01")
+	ts, ok = s.Scan()
+	if !ok || ts[0].Value.(float64) != 10.01 {
+		t.Error("expect 10.01, got", ts[0].Value)
+	}
 }
 
 func TestScanString(t *testing.T) {

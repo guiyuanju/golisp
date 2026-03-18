@@ -214,10 +214,15 @@ func (s *Scanner) number() float64 {
 		s.length++
 	}
 	var decimal float64
-	for !s.isEnd() && s.cur() == '.' {
+	if !s.isEnd() && s.cur() == '.' {
 		s.advance()
-		decimal += float64(s.cur() - '0')
-		decimal /= 10
+		pos := 10.0
+		for !s.isEnd() && isDigit(s.cur()) {
+			cur := float64(s.cur() - '0')
+			decimal += cur / pos
+			s.advance()
+			pos *= 10
+		}
 	}
 	res += decimal
 
