@@ -32,3 +32,10 @@
             (list body))))
 
 (fn nano->milisec (x) (/ x 1000000))
+
+;; (macro timeit (forms)
+;;     (list 'let '(start (time))
+;;         (list 'do
+;;             forms
+;;             '(nano->milisec (- (time) start)))))
+;; 
