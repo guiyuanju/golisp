@@ -6,9 +6,12 @@ GoLisp is an embedded Lisp in Go, bringing Lisp's powerful macro to Go, provodin
 
 ## Usage
 
-Check **examples** folder for more examples.
+```sh
+go get github.com/guiyuanju/golisp
+```
 
 Use GoLisp script to dynamically execute discount strategy:
+(Check **examples** folder for more examples)
 
 ```go
 import (
