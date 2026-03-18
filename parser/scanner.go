@@ -103,7 +103,7 @@ func (s *Scanner) Scan() ([]Token, bool) {
 			s.line++
 			s.column = 0
 			s.advance()
-		case ' ':
+		case ' ', '\t':
 			s.advance()
 		case ';':
 			s.comment()
