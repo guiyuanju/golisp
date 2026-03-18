@@ -2,6 +2,8 @@ package evaluator
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 
@@ -285,7 +287,7 @@ func (evaluator Evaluator) macroExpand(e expr.List) (expr.Expr, bool) {
 
 func (evaluator Evaluator) Eval(e expr.Expr) (expr.Expr, bool) {
 	switch e := e.(type) {
-	case expr.Int, expr.String, expr.Bool, nil:
+	case expr.Number, expr.String, expr.Bool, expr.Closure, nil:
 		return e, true
 
 	case expr.Symbol:
@@ -419,4 +421,17 @@ func isTruthy(e expr.Expr) bool {
 	default:
 		return true
 	}
+}
+
+func WithPrelude() Evaluator {
+	prelude, err := os.ReadFile("./stdlib/prelude.scm")
+	if err != nil {
+		log.Fatal(err)
+	}
+	e := New()
+	_, ok := e.EvalString(string(prelude))
+	if !ok {
+		os.Exit(1)
+	}
+	return e
 }

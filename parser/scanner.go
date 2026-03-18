@@ -10,7 +10,7 @@ type TokenType int
 const (
 	LEFT_PAREN TokenType = iota
 	RIGHT_PAREN
-	INTEGER
+	NUMBER
 	STRING
 	TRUE
 	FALSE
@@ -130,7 +130,7 @@ func (s *Scanner) Scan() ([]Token, bool) {
 			} else if s.consume("nil") {
 				res = append(res, s.newToken(NIL, nil))
 			} else if s.isNumber() {
-				res = append(res, s.newToken(INTEGER, s.number()))
+				res = append(res, s.newToken(NUMBER, s.number()))
 			} else {
 				res = append(res, s.newToken(SYMBOL, s.symbol()))
 			}
@@ -201,18 +201,26 @@ func (s *Scanner) string() (string, bool) {
 	return string(res), true
 }
 
-func (s *Scanner) number() int {
+func (s *Scanner) number() float64 {
 	var isNeg bool
 	if s.cur() == '-' {
 		isNeg = true
 		s.advance()
 	}
-	var res int
+	var res float64
 	for !s.isEnd() && isDigit(s.cur()) {
-		res = res*10 + int(s.cur()-'0')
+		res = res*10 + float64(s.cur()-'0')
 		s.advance()
 		s.length++
 	}
+	var decimal float64
+	for !s.isEnd() && s.cur() == '.' {
+		s.advance()
+		decimal += float64(s.cur() - '0')
+		decimal /= 10
+	}
+	res += decimal
+
 	if isNeg {
 		return -res
 	}

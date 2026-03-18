@@ -30,22 +30,22 @@ type Expr interface {
 	String() string
 }
 
-type Int struct {
+type Number struct {
 	Id    int
-	Value int
+	Value float64
 }
 
-func (e Int) ExprId() int {
+func (e Number) ExprId() int {
 	return e.Id
 }
-func (e Int) ExprName() string {
+func (e Number) ExprName() string {
 	return "int"
 }
-func (e Int) String() string {
+func (e Number) String() string {
 	return fmt.Sprint(e.Value)
 }
-func (e Int) Equal(other Expr) bool {
-	if o, ok := other.(Int); ok {
+func (e Number) Equal(other Expr) bool {
+	if o, ok := other.(Number); ok {
 		return e.Value == o.Value
 	}
 	return false
@@ -246,8 +246,8 @@ func (e Closure) Equal(other Expr) bool {
 
 type Env []map[string]Expr
 
-func NewInt(value int) Int {
-	return Int{getId(), value}
+func NewNum(value float64) Number {
+	return Number{getId(), value}
 }
 
 func NewString(value string) String {

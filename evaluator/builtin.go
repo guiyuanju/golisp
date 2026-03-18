@@ -14,30 +14,32 @@ type Builtins map[string]Proc
 
 var RegisteredBuiltins Builtins = Builtins{}
 
-func RegisterDefaultBuiltins() Builtins {
-	res := RegisteredBuiltins
-	res["+"] = plus
-	res["-"] = minus
-	res["*"] = multiply
-	res["/"] = divide
-	res["print"] = print
-	res["do"] = do
-	res["="] = equal
-	res[">"] = greater
-	res["<"] = less
-	res["<="] = lessEqual
-	res[">="] = greaterEqual
-	res["append"] = _append
-	res[":"] = slice
-	res["list"] = list
-	res["not"] = not
-	res["type"] = _type
-	res["macroexpand"] = macroexpand
-	res["time"] = _time
-	res["."] = dot
-	res["len"] = length
-	res["eval"] = eval
-	return res
+func RegisterBuiltin(name string, proc Proc) {
+	RegisteredBuiltins[name] = proc
+}
+
+func RegisterDefaultBuiltins() {
+	RegisteredBuiltins["+"] = plus
+	RegisteredBuiltins["-"] = minus
+	RegisteredBuiltins["*"] = multiply
+	RegisteredBuiltins["/"] = divide
+	RegisteredBuiltins["print"] = print
+	RegisteredBuiltins["do"] = do
+	RegisteredBuiltins["="] = equal
+	RegisteredBuiltins[">"] = greater
+	RegisteredBuiltins["<"] = less
+	RegisteredBuiltins["<="] = lessEqual
+	RegisteredBuiltins[">="] = greaterEqual
+	RegisteredBuiltins["append"] = _append
+	RegisteredBuiltins[":"] = slice
+	RegisteredBuiltins["list"] = list
+	RegisteredBuiltins["not"] = not
+	RegisteredBuiltins["type"] = _type
+	RegisteredBuiltins["macroexpand"] = macroexpand
+	RegisteredBuiltins["time"] = _time
+	RegisteredBuiltins["."] = dot
+	RegisteredBuiltins["len"] = length
+	RegisteredBuiltins["eval"] = eval
 }
 
 func eval(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
@@ -49,19 +51,19 @@ func slice(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need 3 arguments"))
 		return nil, false
 	}
-	start, ok := values[1].(expr.Int)
+	start, ok := values[1].(expr.Number)
 	if !ok {
 		fmt.Println(e.errorInfo("repl", values[0], "expect int"))
 		return nil, false
 	}
-	end, ok := values[2].(expr.Int)
+	end, ok := values[2].(expr.Number)
 	if !ok {
 		fmt.Println(e.errorInfo("repl", values[0], "expect int"))
 		return nil, false
 	}
 	switch seq := values[3].(type) {
 	case expr.List:
-		startIdx := start.Value
+		startIdx := int(start.Value)
 		if startIdx < 0 {
 			startIdx += len(seq.Value)
 		}
@@ -69,7 +71,7 @@ func slice(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 			fmt.Println(e.errorInfo("repl", values[1], fmt.Sprintf("index %d out of bound %d", startIdx, len(seq.Value))))
 			return nil, false
 		}
-		endIdx := end.Value
+		endIdx := int(end.Value)
 		if endIdx < 0 {
 			endIdx += len(seq.Value)
 		}
@@ -107,7 +109,7 @@ func length(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	}
 	switch seq := values[1].(type) {
 	case expr.List:
-		return expr.NewInt(len(seq.Value)), true
+		return expr.NewNum(float64(len(seq.Value))), true
 	default:
 		fmt.Println(e.errorInfo("repl", values[1], "unsupported type for len"))
 		return nil, false
@@ -121,12 +123,12 @@ func dot(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	}
 	switch seq := values[2].(type) {
 	case expr.List:
-		v, ok := values[1].(expr.Int)
+		v, ok := values[1].(expr.Number)
 		if !ok {
 			fmt.Println(e.errorInfo("repl", values[2], "expect int"))
 			return nil, false
 		}
-		idx, ok := formalizeIndex(v.Value, len(seq.Value))
+		idx, ok := formalizeIndex(int(v.Value), len(seq.Value))
 		if !ok {
 			fmt.Println(e.errorInfo("repl", values[1], fmt.Sprintf("index %d out of bound %d", idx, len(seq.Value))))
 			return nil, false
@@ -143,16 +145,16 @@ func multiply(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need at least 2 argumte"))
 		return nil, false
 	}
-	var res int = 1
+	var res float64 = 1
 	for _, v := range values[1:] {
-		n, ok := v.(expr.Int)
+		n, ok := v.(expr.Number)
 		if !ok {
 			fmt.Println(e.errorInfo("repl", values[0], "expect int"))
 			return nil, false
 		}
 		res *= n.Value
 	}
-	return expr.NewInt(res), true
+	return expr.NewNum(res), true
 }
 
 func divide(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
@@ -160,26 +162,26 @@ func divide(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 		fmt.Println(e.errorInfo("repl", values[0], "arity mismatch:", "need at least 2 argumte"))
 		return nil, false
 	}
-	v, ok := values[1].(expr.Int)
+	v, ok := values[1].(expr.Number)
 	if !ok {
 		fmt.Println(e.errorInfo("repl", values[0], "expect int"))
 		return nil, false
 	}
 	res := v.Value
 	for _, v := range values[2:] {
-		n, ok := v.(expr.Int)
+		n, ok := v.(expr.Number)
 		if !ok {
 			fmt.Println(e.errorInfo("repl", values[0], "expect int"))
 			return nil, false
 		}
 		res /= n.Value
 	}
-	return expr.NewInt(res), true
+	return expr.NewNum(res), true
 }
 
 func _time(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	nano := time.Now().UnixNano()
-	return expr.NewInt(int(nano)), true
+	return expr.NewNum(float64(nano)), true
 }
 
 func macroexpand(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
@@ -297,10 +299,10 @@ func greater(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 		return nil, false
 	}
 	switch value := values[1].(type) {
-	case expr.Int:
+	case expr.Number:
 		prev := value.Value
 		for i := 2; i < len(values); i++ {
-			if v, ok := values[i].(expr.Int); ok {
+			if v, ok := values[i].(expr.Number); ok {
 				if v.Value >= prev {
 					return expr.NewBool(false), true
 				}
@@ -320,8 +322,8 @@ func greater(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 					return expr.NewBool(false), true
 				}
 				prev = v.Value
-			case expr.Int:
-				str := strconv.Itoa(v.Value)
+			case expr.Number:
+				str := strconv.FormatFloat(v.Value, 'f', -1, 64)
 				if str >= prev {
 					return expr.NewBool(false), true
 				}
@@ -363,25 +365,25 @@ func plus(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	}
 
 	switch value := values[1].(type) {
-	case expr.Int:
+	case expr.Number:
 		res := value.Value
 		for i := 2; i < len(values); i++ {
-			if v, ok := values[i].(expr.Int); ok {
+			if v, ok := values[i].(expr.Number); ok {
 				res += v.Value
 			} else {
 				fmt.Println(e.errorInfo("repl", v, "expect int"))
 				return nil, false
 			}
 		}
-		return expr.NewInt(res), true
+		return expr.NewNum(res), true
 	case expr.String:
 		res := value.Value
 		for i := 2; i < len(values); i++ {
 			switch v := values[i].(type) {
 			case expr.String:
 				res += v.Value
-			case expr.Int:
-				res += strconv.Itoa(v.Value)
+			case expr.Number:
+				res += strconv.FormatFloat(v.Value, 'f', -1, 64)
 			default:
 				fmt.Println(e.errorInfo("repl", v, "expect string or int"))
 				return nil, false
@@ -402,20 +404,20 @@ func minus(e Evaluator, values ...expr.Expr) (expr.Expr, bool) {
 	}
 
 	switch values[1].(type) {
-	case expr.Int:
+	case expr.Number:
 		if len(values) == 1 {
-			return expr.NewInt(-values[1].(expr.Int).Value), true
+			return expr.NewNum(-values[1].(expr.Number).Value), true
 		}
-		res := values[1].(expr.Int).Value
+		res := values[1].(expr.Number).Value
 		for i := 2; i < len(values); i++ {
-			if v, ok := values[i].(expr.Int); ok {
+			if v, ok := values[i].(expr.Number); ok {
 				res -= v.Value
 			} else {
 				fmt.Println(e.errorInfo("repl", v, "expect int"))
 				return nil, false
 			}
 		}
-		return expr.NewInt(res), true
+		return expr.NewNum(res), true
 	}
 
 	fmt.Println(e.errorInfo("repl", values[1], "unsupported operand for -: expect int"))

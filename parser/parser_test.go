@@ -10,7 +10,7 @@ func TestParse(t *testing.T) {
 		NewToken(LEFT_PAREN, 1, 1, 0, nil),
 		NewToken(SYMBOL, 0, 2, 0, "var"),
 		NewToken(SYMBOL, 0, 3, 0, "a"),
-		NewToken(INTEGER, 0, 4, 0, 10),
+		NewToken(NUMBER, 0, 4, 0, 10.0),
 		NewToken(RIGHT_PAREN, 0, 14, 0, nil),
 
 		NewToken(LEFT_PAREN, 0, 5, 0, nil),
@@ -19,7 +19,7 @@ func TestParse(t *testing.T) {
 		NewToken(LEFT_PAREN, 0, 8, 0, nil),
 		NewToken(SYMBOL, 0, 9, 0, "+"),
 		NewToken(SYMBOL, 0, 10, 0, "a"),
-		NewToken(INTEGER, 0, 11, 0, 1),
+		NewToken(NUMBER, 0, 11, 0, 1.0),
 		NewToken(RIGHT_PAREN, 0, 12, 0, nil),
 		NewToken(RIGHT_PAREN, 0, 13, 0, nil),
 	}

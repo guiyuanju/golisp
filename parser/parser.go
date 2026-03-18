@@ -45,9 +45,9 @@ func (p *Parser) expr() (expr.Expr, bool) {
 	}
 	cur := p.cur()
 	switch cur.TokenType {
-	case INTEGER:
+	case NUMBER:
 		p.advance()
-		return p.withPosOfToken(expr.NewInt(cur.Value.(int)), cur), true
+		return p.withPosOfToken(expr.NewNum(cur.Value.(float64)), cur), true
 	case STRING:
 		p.advance()
 		return p.withPosOfToken(expr.NewString(cur.Value.(string)), cur), true

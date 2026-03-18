@@ -38,7 +38,7 @@ var TSS []testSuite = []testSuite{
 	{
 		"function",
 		[]testCase{
-			{"fib", "(fn fib [x] (if (< x 2) x (+ (fib (- x 1)) (fib (- x 2))))) (fib 10)", "55"},
+			{"fib", "(fn fib (x) (if (< x 2) x (+ (fib (- x 1)) (fib (- x 2))))) (fib 10)", "55"},
 		},
 	},
 }

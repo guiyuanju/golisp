@@ -1,5 +1,53 @@
 # A Lisp in Go
 
+GoLisp is an embedded Lisp in Go, bringing Lisp's powerful macro to Go, provoding a dynamic and extensible execution layer.
+
+Being embedded means you can easily provide existing Go function to GoLisp by defining and register builtin functions.
+
+Typical usage: rule engine, game logic, workflow script, plugin and extension system.
+
+## Usage
+
+```go
+import (
+    "github.com/guiyuanju/golisp/evaluator"
+	"github.com/guiyuanju/golisp/parser"
+)
+
+func main() {
+	program := `
+; function definition
+(fn fib (x)
+    (if (< x 2)
+        x
+        (+ (fib (- x 1))
+           (fib (- x 2)))))
+
+; macro definition
+(macro timeit (forms)
+    (list 'let '(start (time))
+        (list 'do
+            forms
+            '(nano->milisec (- (time) start)))))
+
+(var form '(timeit (fib 30)))
+
+(print (macroexpand form))
+
+(print (macroexpand (macroexpand form)))
+
+(print (eval form) "miliseconds")
+	`
+
+	e := withPrelude()
+	res, ok := e.EvalString(program)
+	if !ok {
+		return
+	}
+	fmt.Println("result =", res)
+}
+```
+
 ```scheme
 ; function definition
 (fn fib (x)
@@ -49,10 +97,11 @@
 - [x] quote, eval
 - [x] macro
 - [ ] module / namespace
+- [ ] bytecode virtual machine
 
 ## Test
 
 ```go
 cd test
-go test ./...
+go test -v ./...
 ```

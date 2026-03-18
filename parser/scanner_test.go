@@ -4,10 +4,10 @@ import (
 	"testing"
 )
 
-func TestScanInt(t *testing.T) {
+func TestScanNumber(t *testing.T) {
 	s := NewScanner("123")
 	ts, ok := s.Scan()
-	if !ok || ts[0].Value.(int) != 123 {
+	if !ok || ts[0].Value.(float64) != 123.0 {
 		t.Error("expect 123, got", ts[0].Value)
 	}
 }
@@ -37,13 +37,13 @@ func TestScanComplex(t *testing.T) {
 		expect []TokenType
 	}
 	cases := []testCase{
-		{"list", "(+ 1 2 3)", []TokenType{LEFT_PAREN, SYMBOL, INTEGER, INTEGER, INTEGER, RIGHT_PAREN}},
-		{"number", "123", []TokenType{INTEGER}},
+		{"list", "(+ 1 2 3)", []TokenType{LEFT_PAREN, SYMBOL, NUMBER, NUMBER, NUMBER, RIGHT_PAREN}},
+		{"number", "123", []TokenType{NUMBER}},
 		{"string", "\"a string\"", []TokenType{STRING}},
 		{"true", "true", []TokenType{TRUE}},
 		{"complex", "(if true (set a (+ a 1)) b)",
 			[]TokenType{LEFT_PAREN, SYMBOL, TRUE, LEFT_PAREN, SYMBOL, SYMBOL, LEFT_PAREN,
-				SYMBOL, SYMBOL, INTEGER, RIGHT_PAREN, RIGHT_PAREN, SYMBOL, RIGHT_PAREN}},
+				SYMBOL, SYMBOL, NUMBER, RIGHT_PAREN, RIGHT_PAREN, SYMBOL, RIGHT_PAREN}},
 	}
 	for _, tc := range cases {
 		s := NewScanner(tc.input)
@@ -67,11 +67,11 @@ func TestScanPosition(t *testing.T) {
 	s := NewScanner(str)
 	res, _ := s.Scan()
 	one := res[2]
-	if !(one.Value.(int) == 1 && one.Line == 1 && one.Column == 4) {
+	if !(one.Value.(float64) == 1.0 && one.Line == 1 && one.Column == 4) {
 		t.Error("postion info of 1 incorrect", one)
 	}
 	twoThree := res[3]
-	if !(twoThree.Value.(int) == 23 && twoThree.Line == 2 && twoThree.Column == 4 && twoThree.Length == 2) {
+	if !(twoThree.Value.(float64) == 23.0 && twoThree.Line == 2 && twoThree.Column == 4 && twoThree.Length == 2) {
 		t.Error("postion info of 2 incorrect", twoThree)
 	}
 }
