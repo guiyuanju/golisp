@@ -8,45 +8,87 @@ Typical usage: rule engine, game logic, workflow script, plugin and extension sy
 
 ## Usage
 
+Check **examples** folder for more examples.
+
+Use GoLisp script to dynamically execute discount strategy:
+
 ```go
 import (
-    "github.com/guiyuanju/golisp/evaluator"
-	"github.com/guiyuanju/golisp/parser"
+	"fmt"
+
+	"github.com/guiyuanju/golisp/evaluator"
 )
 
 func main() {
-	program := `
-; function definition
-(fn fib (x)
-    (if (< x 2)
-        x
-        (+ (fib (- x 1))
-           (fib (- x 2)))))
+	// data is Go side
+	prices := []float64{12, 100, 80, 120, 200, 40, 30}
 
-; macro definition
-(macro timeit (forms)
-    (list 'let '(start (time))
-        (list 'do
-            forms
-            '(nano->milisec (- (time) start)))))
+	// define a Go function to retrieve data, register it for GoLisp to use
+	evaluator.RegisterBuiltin("get-price-for-order", func(params ...any) (any, error) {
+		// ignoring all error handling
+		return prices[int(params[0].(float64))], nil
+	})
 
-(var form '(timeit (fib 30)))
+	// define script, can be provided dynamically
+	dynamicDiscountRule := `
+	;; use Go function to get data
+	(fn is-discount-applicable (order)
+		(>= (get-price-for-order order) 100))
 
-(print (macroexpand form))
+	(fn apply-percentage-discount (price)
+		(* 0.8 price))
 
-(print (macroexpand (macroexpand form)))
-
-(print (eval form) "miliseconds")
+	;; function defined in script can be invoked from Go side
+	(fn get-discounted-price (order)
+		(let (price (get-price-for-order order))
+			(if (is-discount-applicable order)
+				(apply-percentage-discount price)
+				price)))
 	`
 
-	e := withPrelude()
-	res, ok := e.EvalString(program)
-	if !ok {
-		return
+	// initialize evaluator with standard library
+	e := evaluator.WithPrelude()
+
+	// evaluate script
+	e.EvalString(dynamicDiscountRule)
+
+	// invoke function in script for each order, get discounted price
+	for order := range prices {
+		res, _ := e.InvokeFunc("get-discounted-price", order)
+		fmt.Printf("%v -> %v\n", prices[order], res)
 	}
-	fmt.Println("result =", res)
 }
 ```
+
+## Feature
+
+Interop:
+
+- Register Go function for GoLisp to use
+- Invoke GoLisp function from Go code
+- Auto wrap and unwrap value between Go and GoLisp
+- Get global value of GoLisp from Go code
+- Set global value of GoLisp from Go code
+
+GoLisp:
+
+- primitives
+  - bool
+  - number (float64)
+  - string
+  - symbol
+- list: `'(1 2 3)` a list
+- variable: `(var a 0)`
+- control flow: `(if cond true-brach false-branch)`
+- closure: `(fn (arg) ...)`
+- function: `(fn name (arg) ...)` equals `(var name (fn (arg) ...))`
+- quote: `'a`
+- eval: `(eval ...)`
+- macro: `(macro name [forms] ...)`, `(macroexpand macroname)`
+- [ ] module / namespace
+- [ ] bytecode virtual machine
+
+GoLisp syntax example:
 
 ```scheme
 ; function definition
@@ -77,27 +119,6 @@ func main() {
 (print (eval form) "miliseconds")
 ; => 8397 miliseconds
 ```
-
-## Quick Start
-
-1. `git clone https://github.com/guiyuanju/golisp.git && cd golisp`
-2. `go build`
-3. `./golisp` for REPL or `./golisp filename` for file
-
-## Features
-
-- [x] primitives
-  - [x] bool
-  - [x] int
-  - [x] string
-  - [x] symbol
-- [x] variable
-- [x] closure / function
-- [x] control flow
-- [x] quote, eval
-- [x] macro
-- [ ] module / namespace
-- [ ] bytecode virtual machine
 
 ## Test
 
