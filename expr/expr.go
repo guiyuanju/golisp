@@ -334,3 +334,86 @@ func (e Env) AppendEnv(env Env) Env {
 	}
 	return append(e, env[0])
 }
+
+// GoLisp value -> Go value
+func GVal(val Expr) any {
+	switch val := val.(type) {
+	case Number:
+		return val.Value
+	case String:
+		return val.Value
+	case Symbol:
+		return val.Value
+	case Nil:
+		return nil
+	case Bool:
+		return val.Value
+	case List:
+		res := []any{}
+		for _, v := range val.Value {
+			res = append(res, GVal(v))
+		}
+		return res
+	default:
+		panic(fmt.Sprintf("%T cannot be converted from GoLisp value", val))
+	}
+}
+
+// Go value -> GoLisp value
+func LVal(val any) Expr {
+	switch val := val.(type) {
+	case int:
+		return NewNum(float64(val))
+	case float32:
+		return NewNum(float64(val))
+	case float64:
+		return NewNum(float64(val))
+	case string:
+		if len(val) > 0 && val[0] == '\'' {
+			return NewSymbol(val)
+		}
+		return NewString(val)
+	case bool:
+		return NewBool(val)
+	case []int:
+		var res []Expr
+		for _, v := range val {
+			res = append(res, LVal(v))
+		}
+		return NewList(res...)
+	case []float32:
+		var res []Expr
+		for _, v := range val {
+			res = append(res, LVal(v))
+		}
+		return NewList(res...)
+	case []float64:
+		var res []Expr
+		for _, v := range val {
+			res = append(res, LVal(v))
+		}
+		return NewList(res...)
+	case []string:
+		var res []Expr
+		for _, v := range val {
+			res = append(res, LVal(v))
+		}
+		return NewList(res...)
+	case []Symbol:
+		var res []Expr
+		for _, v := range val {
+			res = append(res, LVal(v))
+		}
+		return NewList(res...)
+	case []Bool:
+		var res []Expr
+		for _, v := range val {
+			res = append(res, LVal(v))
+		}
+		return NewList(res...)
+	case nil:
+		return NewNil()
+	default:
+		panic(fmt.Sprintf("%T cannot be converted to GoLisp value", val))
+	}
+}
