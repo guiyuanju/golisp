@@ -1,3 +1,6 @@
+package stdlib
+
+var Prelude string = `
 (macro and (a b)
     (list 'if a b a))
 
@@ -39,3 +42,5 @@
 ;;             forms
 ;;             '(nano->milisec (- (time) start)))))
 ;; 
+
+`
