@@ -71,3 +71,16 @@ func repl(e evaluator.Evaluator) {
 		}
 	}
 }
+
+func withPrelude() evaluator.Evaluator {
+	prelude, err := os.ReadFile("./stdlib/prelude.scm")
+	if err != nil {
+		log.Fatal(err)
+	}
+	e := evaluator.New()
+	_, ok := e.EvalString(string(prelude))
+	if !ok {
+		os.Exit(1)
+	}
+	return e
+}
