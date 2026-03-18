@@ -31,21 +31,23 @@ func main() {
 	})
 
 	// define script, can be provided dynamically
-	dynamicDiscountRule := `
-	;; use Go function to get data
-	(fn is-discount-applicable (order)
-		(>= (get-price-for-order order) 100))
+	dynamicDiscountRule :=
+	dynamicDiscountRule :=
+		`
+		;; use Go function to get data
+		(fn is-discount-applicable (order)
+			(>= (get-price-for-order order) 100))
 
-	(fn apply-percentage-discount (price)
-		(* 0.8 price))
+		(fn apply-percentage-discount (price)
+			(* 0.8 price))
 
-	;; function defined in script can be invoked from Go side
-	(fn get-discounted-price (order)
-		(let (price (get-price-for-order order))
-			(if (is-discount-applicable order)
-				(apply-percentage-discount price)
-				price)))
-	`
+		;; function defined in script can be invoked from Go side
+		(fn get-discounted-price (order)
+			(let (price (get-price-for-order order))
+				(if (is-discount-applicable order)
+					(apply-percentage-discount price)
+					price)))
+		`
 
 	// initialize evaluator with standard library
 	e := evaluator.WithPrelude()
