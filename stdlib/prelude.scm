@@ -28,13 +28,7 @@
 (macro let (bindings body)
     (var vars (map (fn (x) (list 'var (head x) (snd x)))
                     (pair bindings)))
-    (list (concat (concat '(fn ())) vars)
-            (list body)))
-
-(macro timeit (forms)
-    (list 'let '(start (time))
-        (list 'do
-            forms
-            '(nano->milisec (- (time) start)))))
+    (list (concat (concat '(fn ()) vars)
+            (list body))))
 
 (fn nano->milisec (x) (/ x 1000000))
