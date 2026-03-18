@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -434,4 +435,38 @@ func WithPrelude() Evaluator {
 		os.Exit(1)
 	}
 	return e
+}
+
+func (e Evaluator) InvokeFunc(name string, args ...any) (any, error) {
+	target, ok := e.env.Get(name)
+	if !ok {
+		return nil, fmt.Errorf("function %s doesn't exist", name)
+	}
+	eles := []expr.Expr{target}
+	for _, a := range args {
+		eles = append(eles, expr.LVal(a))
+	}
+	function := expr.NewList(eles...)
+	res, ok := e.Eval(function)
+	if !ok {
+		return nil, errors.New("evaluation failed")
+	}
+	return expr.GVal(res), nil
+}
+
+func (e Evaluator) GetGlobal(name string) (any, error) {
+	target, ok := e.env.Get(name)
+	if !ok {
+		return nil, fmt.Errorf("global %s doesn't exist", name)
+	}
+	return expr.GVal(target), nil
+}
+
+func (e Evaluator) SetGlobal(name string, val any) (any, error) {
+	_, ok := e.env.Get(name)
+	if !ok {
+		return nil, fmt.Errorf("global %s doesn't exist", name)
+	}
+	e.env.Set(name, expr.LVal(val))
+	return nil, nil
 }
