@@ -119,6 +119,5 @@ GoLisp syntax example:
 ## Test
 
 ```go
-cd test
 go test -v ./...
 ```
