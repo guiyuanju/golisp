@@ -17,11 +17,11 @@ type Evaluator struct {
 
 func New() Evaluator {
 	env := expr.NewEnv()
-	builtins := NewBuiltins()
-	for name, _ := range builtins {
+	RegisterDefaultBuiltins()
+	for name, _ := range RegisteredBuiltins {
 		env.Add(name, expr.NewBuiltin(name))
 	}
-	return Evaluator{env, parser.NewPositions(), builtins}
+	return Evaluator{env, parser.NewPositions(), RegisteredBuiltins}
 }
 
 func (e Evaluator) errorInfo(file string, expr expr.Expr, info ...string) string {

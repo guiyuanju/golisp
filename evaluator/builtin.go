@@ -12,8 +12,10 @@ type Proc func(e Evaluator, exprs ...expr.Expr) (expr.Expr, bool)
 
 type Builtins map[string]Proc
 
-func NewBuiltins() Builtins {
-	res := map[string]Proc{}
+var RegisteredBuiltins Builtins = Builtins{}
+
+func RegisterDefaultBuiltins() Builtins {
+	res := RegisteredBuiltins
 	res["+"] = plus
 	res["-"] = minus
 	res["*"] = multiply
