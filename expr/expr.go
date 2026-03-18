@@ -246,6 +246,19 @@ func (e Closure) Equal(other Expr) bool {
 
 type Env []map[string]Expr
 
+func (e Env) String() string {
+	var sb = strings.Builder{}
+	sb.WriteString("Env: {\n")
+	for _, layer := range e {
+		for k, v := range layer {
+			sb.WriteString(fmt.Sprintf("\t\"%v\":\t%v\n", k, v))
+		}
+		sb.WriteString("====================\n")
+	}
+	sb.WriteString("}\n")
+	return sb.String()
+}
+
 func NewNum(value float64) Number {
 	return Number{getId(), value}
 }
