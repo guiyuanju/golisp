@@ -87,20 +87,10 @@ Run with golisp source file:
 golisp main.gl
 ```
 
-## Interoperability
-
-See examples folder.
-
-- Register Go function for GoLisp to use
-- Invoke GoLisp function from Go code
-- Auto wrap and unwrap value between Go and GoLisp
-- Get global value of GoLisp from Go code
-- Set global value of GoLisp from Go code
-
 ## Syntax
 
 ```ebnf
-expr = int | string | bool | symbol | nil | quote | var | set | if | fn | | macro | list
+expr = int | string | bool | symbol | nil | quote | var | set | if | fn | macro | list
 var = "(" "var" symbol expr ")"
 set = "(" "set" symbol expr ")"
 if = "(" "if" expr expr expr? ")"
@@ -130,7 +120,17 @@ special_form = quote | var | set | if | fn | macro
 - eval: `(eval 'key) => key`
 - macro: `(macro name [forms] ...)`, `(macroexpand macroname)`
 
-Example:
+## Interoperability
+
+See examples folder.
+
+- Register Go function for GoLisp to use
+- Invoke GoLisp function from Go code
+- Auto wrap and unwrap value between Go and GoLisp
+- Get global value of GoLisp from Go code
+- Set global value of GoLisp from Go code
+
+## Macro
 
 ```scheme
 ; function definition
