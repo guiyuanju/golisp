@@ -150,8 +150,10 @@ Invoke GoLisp function from Go code:
 ```go
 // get evaluator
 e := evaluator.WithPrelude()
+
 // evaluate the script
 e.EvalString(dynamicDiscountRule)
+
 // invoke GoLisp function, return value returned
 res, err := e.InvokeFunc("get-discounted-price", order)
 ```
