@@ -6,7 +6,7 @@ GoLisp is an embedded Lisp in Go, bringing Lisp's powerful macro to Go, provodin
 
 ## Usage
 
-### Use as a embedded language (library)
+### As a embedded language (library)
 
 Add dependency:
 
@@ -67,7 +67,7 @@ func main() {
 }
 ```
 
-### Use as a standalone language (executable)
+### As a standalone language (executable)
 
 Install binary:
 
