@@ -166,6 +166,7 @@ Get global value of GoLisp from Go code:
 
 ```go
 a, _ := e.GetGlobal("a")
+
 fmt.Println(a) // => 1
 ```
 
@@ -173,6 +174,7 @@ Set global value of GoLisp from Go code:
 
 ```go
 a, _ := e.SetGlobal("a", 2)
+
 fmt.Println(a) // => 2
 ```
 
