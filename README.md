@@ -122,13 +122,58 @@ special_form = quote | var | set | if | fn | macro
 
 ## Interoperability
 
-See examples folder.
+Register Go function for GoLisp to use:
 
-- Register Go function for GoLisp to use
-- Invoke GoLisp function from Go code
-- Auto wrap and unwrap value between Go and GoLisp
-- Get global value of GoLisp from Go code
-- Set global value of GoLisp from Go code
+```go
+// params are values passed from GoLisp, auto unwrapped as Go value
+// use type assertion to test and retrieve the underlying typed value
+// return an error so that GoLisp will print the error and stop execution
+// the value returned will be auto wrapped as a GoLisp value for GoLisp to use
+evaluator.RegisterBuiltin("get-price-for-order", func(params ...any) (any, error) {
+		// ignoring all error handling
+		return prices[int(params[0].(float64))], nil
+})
+```
+
+Call Go function from GoLisp:
+
+```scheme
+;; call the registered name
+(var price (get-price-for-order 0))
+
+;; value returned by Go function is auto wrapped as GoLisp value
+(print price)
+```
+
+Invoke GoLisp function from Go code:
+
+```go
+e := evaluator.WithPrelude() // get evaluator
+e.EvalString(dynamicDiscountRule) // evaluate the script
+res, err := e.InvokeFunc("get-discounted-price", order) // invoke GoLisp function, return value returned
+```
+
+Get global value of GoLisp from Go code:
+
+```scheme
+(var a 1)
+```
+
+```go
+a, _ := e.GetGlobal("a")
+fmt.Println(a) // => 1
+```
+
+Set global value of GoLisp from Go code:
+
+```go
+a, _ := e.SetGlobal("a", 2)
+fmt.Println(a) // => 2
+```
+
+```scheme
+(print a) ;; => 2
+```
 
 ## Macro
 
