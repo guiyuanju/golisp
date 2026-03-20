@@ -99,8 +99,6 @@ See examples folder.
 
 ## Syntax
 
-syntax rules:
-
 ```ebnf
 expr = int | string | bool | symbol | nil | quote | var | set | if | fn | | macro | list
 var = "(" "var" symbol expr ")"
