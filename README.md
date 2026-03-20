@@ -6,6 +6,10 @@ GoLisp is an embedded Lisp in Go, bringing Lisp's powerful macro to Go, provodin
 
 ## Usage
 
+### Use as a embedded language (library)
+
+Add dependency:
+
 ```sh
 go get github.com/guiyuanju/golisp
 ```
@@ -61,6 +65,26 @@ func main() {
 		fmt.Printf("%v -> %v\n", prices[order], res)
 	}
 }
+```
+
+### Use as a standalone language (executable)
+
+Install binary:
+
+```sh
+go install github.com/guiyuanju/golisp
+```
+
+Run REPL:
+
+```sh
+golisp
+```
+
+Run with golisp source file:
+
+```sh
+golisp main.gl
 ```
 
 ## Feature
