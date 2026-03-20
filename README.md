@@ -87,7 +87,7 @@ Run with golisp source file:
 golisp main.gl
 ```
 
-## Feature
+## Features
 
 Interop:
 
@@ -99,23 +99,42 @@ Interop:
 
 GoLisp:
 
-- primitives
-  - bool
-  - number (float64)
-  - string
-  - symbol
-- list: `'(1 2 3)` a list
-- variable: `(var a 0)`
-- control flow: `(if cond true-brach false-branch)`
-- closure: `(fn (arg) ...)`
-- function: `(fn name (arg) ...)` equals `(var name (fn (arg) ...))`
-- quote: `'a`
-- eval: `(eval ...)`
-- macro: `(macro name [forms] ...)`, `(macroexpand macroname)`
-- [ ] module / namespace
-- [ ] bytecode virtual machine
+## Syntax
 
-GoLisp syntax example:
+syntax rules:
+
+```ebnf
+expr = int | string | bool | symbol | nil | quote | var | set | if | fn | | macro | list
+var = "(" "var" symbol expr ")"
+set = "(" "set" symbol expr ")"
+if = "(" "if" expr expr expr? ")"
+fn = "(" "fn" symbol? "[" symbol* "]" expr* ")"
+quote = "'" expr
+macro = "(" "macro" symbol "[" symbol* "]" expr* ")"
+list = "(" expr* ")"
+
+special_form = quote | var | set | if | fn | macro
+```
+
+- primitives
+  - bool: `true`, `false`
+  - number (float64): `1`, `1.0`, `-1`
+  - string: `"hello, world"`
+  - symbol: `'key`
+  - nil: `nil`
+- list: `'(1 2 3)`
+- variable: `(var a 0)` `(set a 1)`
+- control flow: `(if cond true-brach false-branch)`
+- comparison: `(= 1 1) => true` `(>= 0 1) => false`
+- logical: `(and true false) => true`, `(or nil 1) => 1`
+- closure: `(fn (x) (+ x 1))`
+- function: `(fn inc (x) (+ x 1))` equals `(var inc (fn (x) (+ x 1)))`
+- recursive as loop
+- quote: `'1`
+- eval: `(eval 'key) => key`
+- macro: `(macro name [forms] ...)`, `(macroexpand macroname)`
+
+Example:
 
 ```scheme
 ; function definition
