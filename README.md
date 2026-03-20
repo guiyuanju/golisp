@@ -148,9 +148,12 @@ Call Go function from GoLisp:
 Invoke GoLisp function from Go code:
 
 ```go
-e := evaluator.WithPrelude() // get evaluator
-e.EvalString(dynamicDiscountRule) // evaluate the script
-res, err := e.InvokeFunc("get-discounted-price", order) // invoke GoLisp function, return value returned
+// get evaluator
+e := evaluator.WithPrelude()
+// evaluate the script
+e.EvalString(dynamicDiscountRule)
+// invoke GoLisp function, return value returned
+res, err := e.InvokeFunc("get-discounted-price", order)
 ```
 
 Get global value of GoLisp from Go code:
