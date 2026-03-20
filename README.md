@@ -8,7 +8,7 @@ GoLisp is an embedded Lisp in Go, bringing Lisp's powerful macro to Go, provodin
 
 ### As an embedded language (library)
 
-Add dependency:
+Add as a dependency:
 
 ```sh
 go get github.com/guiyuanju/golisp
@@ -87,17 +87,15 @@ Run with golisp source file:
 golisp main.gl
 ```
 
-## Features
+## Interoperability
 
-Interop:
+See examples folder.
 
 - Register Go function for GoLisp to use
 - Invoke GoLisp function from Go code
 - Auto wrap and unwrap value between Go and GoLisp
 - Get global value of GoLisp from Go code
 - Set global value of GoLisp from Go code
-
-GoLisp:
 
 ## Syntax
 
