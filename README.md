@@ -35,9 +35,7 @@ func main() {
 	})
 
 	// define script, can be provided dynamically
-	dynamicDiscountRule :=
-	dynamicDiscountRule :=
-		`
+	dynamicDiscountRule := `
 		;; use Go function to get data
 		(fn is-discount-applicable (order)
 			(>= (get-price-for-order order) 100))
@@ -51,7 +49,7 @@ func main() {
 				(if (is-discount-applicable order)
 					(apply-percentage-discount price)
 					price)))
-		`
+	`
 
 	// initialize evaluator with standard library
 	e := evaluator.WithPrelude()
